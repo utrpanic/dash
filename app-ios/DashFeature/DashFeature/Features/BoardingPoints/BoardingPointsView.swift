@@ -19,7 +19,7 @@ struct BoardingPointsView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .principal) {
-        Text("승차 지점")
+        Text("탑승 지점")
           .font(.system(size: 24, weight: .regular))
           .foregroundStyle(r.color.textPrimary)
       }
@@ -33,7 +33,7 @@ struct BoardingPointsView: View {
             .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("승차 지점 추가")
+        .accessibilityLabel("탑승 지점 추가")
       }
       .sharedBackgroundVisibility(.hidden)
     }
@@ -58,10 +58,8 @@ struct BoardingPointsView: View {
                 store.send(.editButtonTapped(boardingPoint.id))
               }
             )
-            if boardingPoint.id != store.boardingPoints.last?.id {
-              Divider()
-                .background(r.color.textSecondary.opacity(0.25))
-            }
+            Divider()
+              .background(r.color.textSecondary.opacity(0.25))
           }
         }
       }
@@ -72,9 +70,9 @@ struct BoardingPointsView: View {
 
   private var emptyState: some View {
     ContentUnavailableView {
-      Label("등록된 승차 지점이 없습니다", systemImage: "bus")
+      Label("등록된 탑승 지점이 없습니다", systemImage: "bus")
     } actions: {
-      Button("승차 지점 추가") {
+      Button("탑승 지점 추가") {
         store.send(.addButtonTapped)
       }
       .buttonStyle(.borderedProminent)
@@ -92,23 +90,19 @@ private struct BoardingPointRowView: View {
   var body: some View {
     HStack(spacing: 8) {
       Button(action: select) {
-        HStack(spacing: 16) {
-          selectionIndicator
+        VStack(alignment: .leading, spacing: 6) {
+          Text(boardingPoint.name)
+            .font(.system(size: 20, weight: isSelected ? .semibold : .medium))
+            .foregroundStyle(r.color.textPrimary)
+            .lineLimit(1)
 
-          VStack(alignment: .leading, spacing: 6) {
-            Text(boardingPoint.name)
-              .font(.system(size: 20, weight: .semibold))
-              .foregroundStyle(r.color.textPrimary)
-              .lineLimit(1)
-
-            Text(routeNumbers.joined(separator: ", "))
-              .font(.system(size: 16, weight: .regular))
-              .foregroundStyle(r.color.textSecondary)
-              .lineLimit(2)
-              .multilineTextAlignment(.leading)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
+          Text("\(routeNumbers.count)개 노선 · \(routeNumbers.joined(separator: ", "))")
+            .font(.system(size: 16, weight: .regular))
+            .foregroundStyle(r.color.textSecondary)
+            .lineLimit(2)
+            .multilineTextAlignment(.leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
@@ -117,6 +111,7 @@ private struct BoardingPointRowView: View {
           ? "\(boardingPoint.name), 현재 선택됨"
           : boardingPoint.name
       )
+      .accessibilityHint("현재 탑승 지점으로 선택합니다")
 
       Button(action: edit) {
         Image(systemName: "square.and.pencil")
@@ -127,22 +122,17 @@ private struct BoardingPointRowView: View {
       .buttonStyle(.plain)
       .accessibilityLabel("\(boardingPoint.name) 편집")
     }
-    .frame(minHeight: 84)
-    .padding(.horizontal, 20)
-  }
-
-  @ViewBuilder
-  private var selectionIndicator: some View {
-    if isSelected {
-      Image(systemName: "checkmark")
-        .font(.system(size: 20, weight: .regular))
-        .foregroundStyle(r.color.brandMint)
-        .frame(width: 32, height: 32)
-        .accessibilityHidden(true)
-    } else {
-      Color.clear
-        .frame(width: 32, height: 32)
-        .accessibilityHidden(true)
+    .frame(height: 86)
+    .padding(.horizontal, 16)
+    .background {
+      if isSelected {
+        ZStack(alignment: .leading) {
+          r.color.brandMint.opacity(0.08)
+          Rectangle()
+            .fill(r.color.brandMint)
+            .frame(width: 4)
+        }
+      }
     }
   }
 

@@ -43,18 +43,21 @@ struct UpcomingBusView: View {
     .padding(.horizontal, 26)
     .padding(.vertical, 24)
     .background {
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
+      RoundedRectangle(cornerRadius: 16, style: .continuous)
         .fill(r.color.surface)
-        .shadow(color: r.color.shadow, radius: 12, y: 5)
+        .overlay {
+          RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(r.color.textSecondary.opacity(0.22), lineWidth: 1)
+        }
     }
   }
 
   private var timeWeight: Font.Weight {
     switch minutesRemaining {
-    case ...2:
+    case ...3:
       return .bold
-    case 3...10:
-      return .medium
+    case 4...10:
+      return .regular
     default:
       return .light
     }

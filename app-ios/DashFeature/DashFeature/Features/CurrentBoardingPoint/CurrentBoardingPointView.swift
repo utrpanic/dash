@@ -56,6 +56,18 @@ struct CurrentBoardingPointView: View {
             .foregroundStyle(r.color.textSecondary)
             .frame(maxWidth: .infinity)
           Spacer()
+        } else if store.upcomingBuses.isEmpty {
+          Spacer()
+          VStack(spacing: 8) {
+            Image(systemName: "bus")
+              .font(.system(size: 28, weight: .regular))
+              .foregroundStyle(r.color.textSecondary.opacity(0.7))
+            Text("도착 예정인 버스가 없습니다.")
+              .font(.system(size: 15, weight: .medium))
+              .foregroundStyle(r.color.textSecondary)
+          }
+          .frame(maxWidth: .infinity)
+          Spacer()
         } else {
           ScrollView {
             BoardingPointView(upcomingBuses: Array(store.upcomingBuses.sortedByArrival.prefix(5)))
@@ -259,7 +271,7 @@ private struct CurrentBoardingPointNavigationTrailingView: View {
         store.send(.editButtonTapped)
       } label: {
         Image(systemName: "square.and.pencil")
-          .padding(.horizontal, 4)
+          .frame(width: 44, height: 44)
       }
       .tint(r.color.textSecondary)
       .disabled(store.boardingPointIsNotAvailable)
@@ -269,7 +281,7 @@ private struct CurrentBoardingPointNavigationTrailingView: View {
       } label: {
         Image(systemName: "list.bullet")
           .offset(x: 0, y: 2)
-          .padding(.horizontal, 4)
+          .frame(width: 44, height: 44)
       }
       .tint(r.color.textSecondary)
       .accessibilityLabel("목록")
