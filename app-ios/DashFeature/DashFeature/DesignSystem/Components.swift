@@ -80,6 +80,20 @@ struct DashGroupedSurface<Content: View>: View {
   }
 }
 
+struct DashStatusCard<Content: View>: View {
+  private let content: Content
+
+  init(@ViewBuilder content: () -> Content) {
+    self.content = content()
+  }
+
+  var body: some View {
+    DashGroupedSurface {
+      content
+    }
+  }
+}
+
 struct DashSectionHeader<Trailing: View>: View {
   let title: String
   private let trailing: Trailing

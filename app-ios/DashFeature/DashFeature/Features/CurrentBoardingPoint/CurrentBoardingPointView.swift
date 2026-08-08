@@ -34,8 +34,7 @@ struct CurrentBoardingPointView: View {
       r.color.background
         .ignoresSafeArea()
       VStack(spacing: 0) {
-        Divider()
-          .background(r.color.textSecondary.opacity(0.25))
+        DashListDivider()
         if store.isLoadingUpcomingBuses {
           Spacer()
           ProgressView()
@@ -44,7 +43,7 @@ struct CurrentBoardingPointView: View {
         } else if let boardingPointSelectionMessage {
           Spacer()
           Text(boardingPointSelectionMessage)
-            .font(.system(size: 15, weight: .medium))
+            .font(r.font.body)
             .foregroundStyle(r.color.textSecondary)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
@@ -52,32 +51,34 @@ struct CurrentBoardingPointView: View {
         } else if let errorMessage = store.upcomingBusesErrorMessage {
           Spacer()
           Text(errorMessage)
-            .font(.system(size: 15, weight: .medium))
+            .font(r.font.body)
             .foregroundStyle(r.color.textSecondary)
             .frame(maxWidth: .infinity)
           Spacer()
         } else if store.upcomingBuses.isEmpty {
           Spacer()
-          VStack(spacing: 8) {
+          VStack(spacing: r.dimen.spacingXSmall) {
             Image(systemName: "bus")
-              .font(.system(size: 28, weight: .regular))
-              .foregroundStyle(r.color.textSecondary.opacity(0.7))
+              .font(.title2.weight(.regular))
+              .foregroundStyle(r.color.textSecondary)
             Text("도착 예정인 버스가 없습니다.")
-              .font(.system(size: 15, weight: .medium))
+              .font(r.font.body)
               .foregroundStyle(r.color.textSecondary)
           }
           .frame(maxWidth: .infinity)
           Spacer()
         } else {
           ScrollView {
-            BoardingPointView(upcomingBuses: Array(store.upcomingBuses.sortedByArrival.prefix(5)))
-              .padding(.top, 10)
-              .padding(.bottom, 128)
+            BoardingPointView(
+              upcomingBuses: Array(store.upcomingBuses.sortedByArrival.prefix(5))
+            )
+            .padding(.top, r.dimen.spacingSmall)
+            .padding(.bottom, r.dimen.utilityButtonSize * 2)
           }
           .scrollIndicators(.hidden)
         }
       }
-      .padding(.horizontal, 16)
+      .padding(.horizontal, r.dimen.spacingMedium)
       VStack {
         Spacer()
         HStack {
@@ -85,8 +86,8 @@ struct CurrentBoardingPointView: View {
           floatingButtons
         }
       }
-      .padding(.trailing, 32)
-      .padding(.bottom, 32)
+      .padding(.trailing, r.dimen.spacingXLarge)
+      .padding(.bottom, r.dimen.spacingXLarge)
       .ignoresSafeArea(.container, edges: [.bottom, .trailing])
     }
     .task {
@@ -95,7 +96,7 @@ struct CurrentBoardingPointView: View {
   }
 
   private var floatingButtons: some View {
-    VStack(spacing: 16) {
+    VStack(spacing: r.dimen.spacingMedium) {
       locationButton
       refreshButton
         .overlay(alignment: .bottom) {
@@ -111,15 +112,22 @@ struct CurrentBoardingPointView: View {
       store.send(.locationButtonTapped)
     } label: {
       Image(systemName: "location.fill")
-        .font(.system(size: 18, weight: .semibold))
+        .font(.title3.weight(.semibold))
         .foregroundStyle(r.color.brandMint)
-        .frame(width: 64, height: 64)
+        .frame(
+          width: r.dimen.utilityButtonSize,
+          height: r.dimen.utilityButtonSize
+        )
         .background(r.color.surface, in: Circle())
-        .shadow(color: .black.opacity(0.14), radius: 7, y: 2)
+        .shadow(
+          color: r.color.shadow.opacity(r.opacity.floatingShadow),
+          radius: r.dimen.floatingShadowRadius,
+          y: r.dimen.floatingShadowYOffset
+        )
     }
     .buttonStyle(.plain)
     .disabled(areFloatingButtonsDisabled)
-    .opacity(areFloatingButtonsDisabled ? 0.55 : 1)
+    .opacity(areFloatingButtonsDisabled ? r.opacity.disabled : 1)
     .accessibilityLabel("현재 위치")
   }
 
@@ -128,15 +136,22 @@ struct CurrentBoardingPointView: View {
       store.send(.refreshButtonTapped)
     } label: {
       Image(systemName: "arrow.clockwise")
-        .font(.system(size: 21, weight: .semibold))
+        .font(.title2.weight(.semibold))
         .foregroundStyle(.white)
-        .frame(width: 64, height: 64)
+        .frame(
+          width: r.dimen.utilityButtonSize,
+          height: r.dimen.utilityButtonSize
+        )
         .background(r.color.brandMint, in: Circle())
-        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+        .shadow(
+          color: r.color.shadow.opacity(r.opacity.floatingShadow),
+          radius: r.dimen.floatingShadowRadius,
+          y: r.dimen.floatingShadowYOffset
+        )
     }
     .buttonStyle(.plain)
     .disabled(areFloatingButtonsDisabled)
-    .opacity(areFloatingButtonsDisabled ? 0.55 : 1)
+    .opacity(areFloatingButtonsDisabled ? r.opacity.disabled : 1)
     .accessibilityLabel("새로고침")
   }
 
@@ -146,10 +161,10 @@ struct CurrentBoardingPointView: View {
       TimelineView(.periodic(from: .now, by: 1)) { context in
         if context.date.timeIntervalSince(lastUpdatedAt) >= 10 {
           Text(elapsedTimeText(from: lastUpdatedAt, to: context.date))
-            .font(.system(size: 12, weight: .regular))
+            .font(r.font.caption)
             .monospacedDigit()
-            .foregroundStyle(r.color.textSecondary.opacity(0.6))
-            .frame(width: 64)
+            .foregroundStyle(r.color.textSecondary.opacity(r.opacity.subdued))
+            .frame(width: r.dimen.utilityButtonSize)
             .accessibilityLabel(
               elapsedTimeAccessibilityLabel(from: lastUpdatedAt, to: context.date)
             )
@@ -210,10 +225,10 @@ private struct CurrentBoardingPointNavigationTitleView: View {
     Button {
       store.send(.nextBoardingPointButtonTapped)
     } label: {
-      HStack(spacing: 8) {
+      HStack(spacing: r.dimen.spacingXSmall) {
         Image(systemName: "location.circle.fill")
           .symbolRenderingMode(.palette)
-          .font(.system(size: 24, weight: .semibold))
+          .font(.title2.weight(.semibold))
           .foregroundStyle(.white, r.color.brandMint)
         boardingPointTitleLabel
       }
@@ -235,20 +250,19 @@ private struct CurrentBoardingPointNavigationTitleView: View {
     }
     return HStack(spacing: 0) {
       Text(title)
-        .font(.system(size: 24, weight: .regular))
+        .font(r.font.screenTitle)
         .foregroundStyle(boardingPointTitleColor)
         .lineLimit(1)
         .frame(maxWidth: 160, alignment: .leading)
       if showTrailingIcon {
         Spacer()
-          .frame(width: 4)
+          .frame(width: r.dimen.spacingXXSmall)
         Image(systemName: "chevron.right")
-          .font(.system(size: 16, weight: .medium))
+          .font(.body.weight(.medium))
           .foregroundStyle(r.color.textSecondary)
-        
       }
       Spacer()
-        .frame(width: 8)
+        .frame(width: r.dimen.spacingXSmall)
     }
   }
 
@@ -271,7 +285,10 @@ private struct CurrentBoardingPointNavigationTrailingView: View {
         store.send(.editButtonTapped)
       } label: {
         Image(systemName: "square.and.pencil")
-          .frame(width: 44, height: 44)
+          .frame(
+            width: r.dimen.minimumTouchTarget,
+            height: r.dimen.minimumTouchTarget
+          )
       }
       .tint(r.color.textSecondary)
       .disabled(store.boardingPointIsNotAvailable)
@@ -280,8 +297,10 @@ private struct CurrentBoardingPointNavigationTrailingView: View {
         store.send(.listButtonTapped)
       } label: {
         Image(systemName: "list.bullet")
-          .offset(x: 0, y: 2)
-          .frame(width: 44, height: 44)
+          .frame(
+            width: r.dimen.minimumTouchTarget,
+            height: r.dimen.minimumTouchTarget
+          )
       }
       .tint(r.color.textSecondary)
       .accessibilityLabel("목록")

@@ -18,8 +18,10 @@ enum r {
     static let selectedRowTitle = Font.system(size: 20, weight: .semibold)
     static let body = Font.system(size: 16, weight: .regular)
     static let metadata = Font.system(size: 14, weight: .regular)
+    static let caption = Font.system(size: 12, weight: .regular)
     static let navigationAction = Font.system(size: 17, weight: .semibold)
     static let arrivalRoute = Font.system(size: 40, weight: .semibold)
+    static let arrivalValue = Font.system(size: 48, weight: .regular)
   }
 
   enum dimen {
@@ -39,6 +41,8 @@ enum r {
     static let richRowMinHeight: CGFloat = 88
     static let rowVerticalPadding: CGFloat = 14
     static let selectionRailWidth: CGFloat = 4
+    static let floatingShadowRadius: CGFloat = 8
+    static let floatingShadowYOffset: CGFloat = 3
 
     static let controlRadius: CGFloat = 12
     static let surfaceRadius: CGFloat = 16
@@ -48,5 +52,7 @@ enum r {
     static let selectionBackground = 0.08
     static let disabled = 0.45
     static let divider = 0.25
+    static let floatingShadow = 0.12
+    static let subdued = 0.6
   }
 }

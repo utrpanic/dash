@@ -12,43 +12,42 @@ struct UpcomingBusView: View {
   }
 
   var body: some View {
-    HStack(alignment: .center, spacing: 18) {
-      VStack(alignment: .leading, spacing: 10) {
-        Text(upcomingBus.busRoute.number)
-          .font(.system(size: 40, weight: .semibold, design: .default))
-          .foregroundStyle(r.color.textPrimary)
+    DashStatusCard {
+      HStack(alignment: .center, spacing: r.dimen.spacingMedium) {
+        VStack(alignment: .leading, spacing: r.dimen.spacingSmall) {
+          Text(upcomingBus.busRoute.number)
+            .font(r.font.arrivalRoute)
+            .foregroundStyle(r.color.textPrimary)
 
-        VStack(alignment: .leading, spacing: 6) {
-          if let alias = upcomingBus.busStop.alias {
-            Label(alias, systemImage: "mappin.circle")
-          }
-          Label(arrivalTime.formatted(date: .omitted, time: .shortened), systemImage: "clock")
+          Label(
+            arrivalTime.formatted(date: .omitted, time: .shortened),
+            systemImage: "clock"
+          )
+          .font(r.font.body)
+          .fontWeight(.medium)
+          .foregroundStyle(r.color.textSecondary)
+          .labelStyle(.titleAndIcon)
         }
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(r.color.textSecondary)
-        .labelStyle(.titleAndIcon)
-      }
-      Spacer(minLength: 16)
-      VStack(spacing: 0) {
-        Text("\(minutesRemaining)")
-          .font(.system(size: 48, weight: timeWeight, design: .default))
-          .foregroundStyle(r.color.brandMint)
-          .monospacedDigit()
-        Text("min")
-          .font(.system(size: 24, weight: timeWeight, design: .default))
-          .foregroundStyle(r.color.brandMint)
-      }
-      .frame(minWidth: 70)
-    }
-    .padding(.horizontal, 26)
-    .padding(.vertical, 24)
-    .background {
-      RoundedRectangle(cornerRadius: 16, style: .continuous)
-        .fill(r.color.surface)
-        .overlay {
-          RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(r.color.textSecondary.opacity(0.22), lineWidth: 1)
+
+        Spacer(minLength: r.dimen.spacingMedium)
+
+        HStack(alignment: .lastTextBaseline, spacing: r.dimen.spacingXXSmall) {
+          Text("\(minutesRemaining)")
+            .font(r.font.arrivalValue)
+            .fontWeight(timeWeight)
+            .foregroundStyle(r.color.brandMint)
+            .monospacedDigit()
+
+          Text("분")
+            .font(r.font.screenTitle)
+            .fontWeight(timeWeight)
+            .foregroundStyle(r.color.brandMint)
+            .padding(.bottom, r.dimen.spacingXXSmall)
         }
+        .frame(minWidth: r.dimen.standardRowMinHeight)
+      }
+      .padding(.horizontal, r.dimen.spacingLarge)
+      .padding(.vertical, r.dimen.spacingLarge)
     }
   }
 

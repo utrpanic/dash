@@ -4,7 +4,7 @@ struct BoardingPointView: View {
   let upcomingBuses: [UpcomingBus]
 
   var body: some View {
-    LazyVStack(spacing: 12) {
+    LazyVStack(spacing: r.dimen.spacingSmall) {
       ForEach(upcomingBuses) { upcomingBus in
         UpcomingBusView(upcomingBus: upcomingBus)
       }
