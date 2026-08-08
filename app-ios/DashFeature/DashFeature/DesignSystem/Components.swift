@@ -1,5 +1,32 @@
 import SwiftUI
 
+struct DashPrimaryButtonStyle: ButtonStyle {
+  var isFloating = false
+
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(r.font.navigationAction)
+      .foregroundStyle(.white)
+      .frame(maxWidth: .infinity)
+      .frame(minHeight: r.dimen.primaryButtonHeight)
+      .background(
+        r.color.brandMint,
+        in: RoundedRectangle(
+          cornerRadius: r.dimen.controlRadius,
+          style: .continuous
+        )
+      )
+      .opacity(configuration.isPressed ? r.opacity.pressed : 1)
+      .shadow(
+        color: isFloating
+          ? r.color.shadow.opacity(r.opacity.floatingShadow)
+          : .clear,
+        radius: r.dimen.floatingShadowRadius,
+        y: r.dimen.floatingShadowYOffset
+      )
+  }
+}
+
 struct DashListDivider: View {
   var leadingInset: CGFloat = 0
   var trailingInset: CGFloat = 0

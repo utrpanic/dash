@@ -26,20 +26,19 @@ struct AddBusStopView: View {
       r.color.background
         .ignoresSafeArea()
       VStack(spacing: 0) {
-        Divider()
-          .background(r.color.textSecondary.opacity(0.25))
+        DashListDivider()
         mapArea
         nearbyStopsSection
       }
 
       selectButton
-        .padding(.horizontal, 16)
+        .padding(.horizontal, r.dimen.spacingMedium)
     }
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .principal) {
         Text("정류장 추가")
-          .font(.system(size: 24, weight: .regular))
+          .font(r.font.screenTitle)
           .foregroundStyle(r.color.textPrimary)
       }
     }
@@ -72,17 +71,17 @@ struct AddBusStopView: View {
       .mapStyle(.standard(elevation: .realistic))
 
       searchField
-        .padding(.horizontal, 32)
-        .padding(.top, 20)
+        .padding(.horizontal, r.dimen.spacingMedium)
+        .padding(.top, r.dimen.spacingLarge)
     }
     .aspectRatio(1, contentMode: .fill)
     .clipped()
   }
 
   private var searchField: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: r.dimen.spacingSmall) {
       Image(systemName: "magnifyingglass")
-        .font(.system(size: 25, weight: .regular))
+        .font(.title2.weight(.regular))
         .foregroundStyle(r.color.textSecondary)
       TextField(
         "장소 또는 주소로 지도 이동",
@@ -91,14 +90,18 @@ struct AddBusStopView: View {
           set: { store.send(.queryChanged($0)) }
         )
       )
-      .font(.system(size: 20, weight: .regular))
+      .font(r.font.input)
       .foregroundStyle(r.color.textPrimary)
       .textInputAutocapitalization(.never)
     }
-    .padding(.horizontal, 18)
-    .frame(height: 58)
+    .padding(.horizontal, r.dimen.spacingMedium)
+    .frame(minHeight: r.dimen.textFieldHeight)
     .background(r.color.surface, in: Capsule())
-    .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
+    .shadow(
+      color: r.color.shadow.opacity(r.opacity.overlayShadow),
+      radius: r.dimen.overlayShadowRadius,
+      y: r.dimen.overlayShadowYOffset
+    )
     .accessibilityLabel("장소 또는 주소 검색")
   }
 
@@ -108,57 +111,53 @@ struct AddBusStopView: View {
         ForEach(Array(filteredStops.enumerated()), id: \.element.id) { index, stop in
           stopRow(stop, markerLetter: markerLetter(for: index))
           if stop.id != filteredStops.last?.id {
-            Divider()
-              .background(r.color.textSecondary.opacity(0.25))
+            DashListDivider()
           }
         }
       }
-      .padding(.bottom, 116)
+      .padding(.horizontal, r.dimen.spacingMedium)
+      .padding(.bottom, selectButtonContentInset)
     }
     .scrollIndicators(.hidden)
     .frame(maxHeight: .infinity)
   }
 
   private func stopRow(_ stop: BusStop, markerLetter: String) -> some View {
-    Button {
+    let isSelected = store.selectedStopID == stop.id
+
+    return Button {
       store.send(.stopTapped(stop.id))
     } label: {
-      HStack(spacing: 16) {
-        marker(for: stop, letter: markerLetter, compact: true)
+      DashFlatListRow(
+        isSelected: isSelected,
+        minHeight: r.dimen.richRowMinHeight
+      ) {
+        HStack(spacing: r.dimen.spacingMedium) {
+          marker(for: stop, letter: markerLetter, compact: true)
 
-        VStack(alignment: .leading, spacing: 5) {
-          Text(stop.name)
-            .font(
-              .system(
-                size: 20,
-                weight: store.selectedStopID == stop.id ? .semibold : .medium
-              )
-            )
-            .foregroundStyle(r.color.textPrimary)
-            .multilineTextAlignment(.leading)
-          Text(verbatim: "정류장 번호 \(stop.id)")
-            .font(.system(size: 16, weight: .regular))
-            .foregroundStyle(r.color.textSecondary)
-            .lineLimit(2)
+          VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
+            Text(stop.name)
+              .font(isSelected ? r.font.selectedRowTitle : r.font.rowTitle)
+              .foregroundStyle(r.color.textPrimary)
+              .multilineTextAlignment(.leading)
+            Text(verbatim: "정류장 번호 \(stop.id)")
+              .font(r.font.body)
+              .foregroundStyle(r.color.textSecondary)
+              .lineLimit(2)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+      } trailing: {
+        EmptyView()
       }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 18)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
-    .background {
-      if store.selectedStopID == stop.id {
-        ZStack(alignment: .leading) {
-          r.color.brandMint.opacity(0.08)
-          Rectangle()
-            .fill(r.color.brandMint)
-            .frame(width: 4)
-        }
-      }
-    }
-    .accessibilityLabel("\(stop.name), 정류장 번호 \(stop.id)")
+    .accessibilityLabel(
+      isSelected
+        ? "\(stop.name), 정류장 번호 \(stop.id), 선택됨"
+        : "\(stop.name), 정류장 번호 \(stop.id)"
+    )
     .accessibilityHint("이 정류장을 선택합니다")
   }
 
@@ -167,17 +166,12 @@ struct AddBusStopView: View {
       store.send(.selectButtonTapped)
     } label: {
       Text("이 정류장 선택")
-        .font(.system(size: 22, weight: .semibold))
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .frame(height: 64)
     }
-    .buttonStyle(.plain)
-    .background(r.color.brandMint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    .padding(.top, 12)
-    .padding(.bottom, 24)
+    .buttonStyle(DashPrimaryButtonStyle(isFloating: true))
+    .padding(.top, r.dimen.spacingSmall)
+    .padding(.bottom, r.dimen.spacingLarge)
     .disabled(store.selectedStopID == nil)
-    .opacity(store.selectedStopID == nil ? 0.45 : 1)
+    .opacity(store.selectedStopID == nil ? r.opacity.disabled : 1)
     .accessibilityHint("선택한 정류장을 탑승 지점에 추가합니다")
   }
 
@@ -191,6 +185,12 @@ struct AddBusStopView: View {
           || String($0.id).contains(query)
       }
     return stops.sorted { distance(to: $0) < distance(to: $1) }
+  }
+
+  private var selectButtonContentInset: CGFloat {
+    r.dimen.primaryButtonHeight
+      + r.dimen.spacingSmall
+      + r.dimen.spacingLarge * 2
   }
 
   private var mapSelection: Binding<BusStop.ID?> {
@@ -224,9 +224,13 @@ struct AddBusStopView: View {
 
   private func marker(for stop: BusStop, letter: String? = nil, compact: Bool = false) -> some View {
     Text(letter ?? markerLetter(for: filteredStops.firstIndex(of: stop) ?? 0))
-      .font(.system(size: compact ? 17 : 14, weight: .semibold))
+      .font(compact ? r.font.sectionTitle : r.font.metadata)
+      .fontWeight(.semibold)
       .foregroundStyle(.white)
-      .frame(width: compact ? 48 : 32, height: compact ? 48 : 32)
+      .frame(
+        width: compact ? r.dimen.listMarkerSize : r.dimen.mapMarkerSize,
+        height: compact ? r.dimen.listMarkerSize : r.dimen.mapMarkerSize
+      )
       .background(
         store.selectedStopID == stop.id ? r.color.brandMint : r.color.textSecondary,
         in: Circle()
@@ -234,7 +238,10 @@ struct AddBusStopView: View {
       .overlay {
         if !compact {
           Circle()
-            .stroke(.white.opacity(0.8), lineWidth: 2)
+            .stroke(
+              .white.opacity(r.opacity.mapMarkerBorder),
+              lineWidth: r.dimen.mapMarkerBorderWidth
+            )
         }
       }
   }

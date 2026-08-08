@@ -41,8 +41,13 @@ enum r {
     static let richRowMinHeight: CGFloat = 88
     static let rowVerticalPadding: CGFloat = 14
     static let selectionRailWidth: CGFloat = 4
+    static let mapMarkerSize: CGFloat = 32
+    static let listMarkerSize: CGFloat = 48
+    static let mapMarkerBorderWidth: CGFloat = 2
     static let floatingShadowRadius: CGFloat = 8
     static let floatingShadowYOffset: CGFloat = 3
+    static let overlayShadowRadius: CGFloat = 8
+    static let overlayShadowYOffset: CGFloat = 2
 
     static let controlRadius: CGFloat = 12
     static let surfaceRadius: CGFloat = 16
@@ -53,6 +58,9 @@ enum r {
     static let disabled = 0.45
     static let divider = 0.25
     static let floatingShadow = 0.12
+    static let overlayShadow = 0.10
+    static let mapMarkerBorder = 0.8
+    static let pressed = 0.8
     static let subdued = 0.6
   }
 }
