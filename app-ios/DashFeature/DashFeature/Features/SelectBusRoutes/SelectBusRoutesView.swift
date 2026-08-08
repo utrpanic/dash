@@ -89,12 +89,9 @@ struct SelectBusRoutesView: View {
   }
 
   private var routeList: some View {
-    LazyVStack(spacing: 0) {
-      ForEach(Array(store.routeOptions.enumerated()), id: \.element.id) { index, option in
+    LazyVStack(spacing: r.dimen.spacingSmall) {
+      ForEach(store.routeOptions) { option in
         routeRow(option)
-        if index < store.routeOptions.count - 1 {
-          DashListDivider()
-        }
       }
     }
     .padding(.horizontal, r.dimen.spacingMedium)
@@ -108,7 +105,7 @@ struct SelectBusRoutesView: View {
     return Button {
       store.send(.routeTapped(option.id))
     } label: {
-      DashMultiSelectRow(
+      DashSelectableCard(
         isSelected: isSelected,
         minHeight: r.dimen.richRowMinHeight
       ) {

@@ -37,6 +37,13 @@ struct DashListDivider: View {
       .padding(.leading, leadingInset)
       .padding(.trailing, trailingInset)
   }
+
+  static var list: DashListDivider {
+    DashListDivider(
+      leadingInset: r.dimen.spacingMedium,
+      trailingInset: r.dimen.spacingMedium
+    )
+  }
 }
 
 struct DashFlatListRow<Content: View, Trailing: View>: View {
@@ -65,6 +72,7 @@ struct DashFlatListRow<Content: View, Trailing: View>: View {
     .padding(.horizontal, r.dimen.spacingMedium)
     .padding(.vertical, r.dimen.rowVerticalPadding)
     .frame(minHeight: minHeight)
+    .frame(maxWidth: .infinity)
     .background {
       if isSelected {
         ZStack(alignment: .leading) {
@@ -78,7 +86,7 @@ struct DashFlatListRow<Content: View, Trailing: View>: View {
   }
 }
 
-struct DashMultiSelectRow<Content: View>: View {
+struct DashSelectableCard<Content: View>: View {
   let isSelected: Bool
   let minHeight: CGFloat
   private let content: Content
@@ -94,40 +102,39 @@ struct DashMultiSelectRow<Content: View>: View {
   }
 
   var body: some View {
-    HStack(spacing: r.dimen.spacingSmall) {
-      content
+    DashGroupedSurface {
+      HStack(spacing: r.dimen.spacingSmall) {
+        content
 
-      ZStack {
-        Circle()
-          .fill(isSelected ? r.color.brandMint : .clear)
-        Circle()
-          .stroke(
-            isSelected ? r.color.brandMint : r.color.textSecondary,
-            lineWidth: r.dimen.selectionIndicatorBorderWidth
-          )
-        if isSelected {
-          Image(systemName: "checkmark")
-            .font(.body.weight(.semibold))
-            .foregroundStyle(.white)
+        ZStack {
+          Circle()
+            .fill(isSelected ? r.color.brandMint : .clear)
+          Circle()
+            .stroke(
+              isSelected ? r.color.brandMint : r.color.textSecondary,
+              lineWidth: r.dimen.selectionIndicatorBorderWidth
+            )
+          if isSelected {
+            Image(systemName: "checkmark")
+              .font(.body.weight(.semibold))
+              .foregroundStyle(.white)
+          }
         }
+        .frame(
+          width: r.dimen.selectionIndicatorSize,
+          height: r.dimen.selectionIndicatorSize
+        )
+        .frame(
+          width: r.dimen.minimumTouchTarget,
+          height: r.dimen.minimumTouchTarget
+        )
+        .accessibilityHidden(true)
       }
-      .frame(
-        width: r.dimen.selectionIndicatorSize,
-        height: r.dimen.selectionIndicatorSize
-      )
-      .frame(
-        width: r.dimen.minimumTouchTarget,
-        height: r.dimen.minimumTouchTarget
-      )
-      .accessibilityHidden(true)
-    }
-    .padding(.horizontal, r.dimen.spacingMedium)
-    .padding(.vertical, r.dimen.rowVerticalPadding)
-    .frame(minHeight: minHeight)
-    .background {
-      if isSelected {
-        r.color.brandMint.opacity(r.opacity.selectionBackground)
-      }
+      .padding(.horizontal, r.dimen.spacingMedium)
+      .padding(.vertical, r.dimen.rowVerticalPadding)
+      .frame(minHeight: minHeight)
+      .frame(maxWidth: .infinity)
+      .background(isSelected ? r.color.brandMint.opacity(r.opacity.selectionBackground) : .clear)
     }
   }
 }
@@ -141,6 +148,12 @@ struct DashGroupedSurface<Content: View>: View {
 
   var body: some View {
     content
+      .clipShape(
+        RoundedRectangle(
+          cornerRadius: r.dimen.surfaceRadius,
+          style: .continuous
+        )
+      )
       .background(
         r.color.surface,
         in: RoundedRectangle(

@@ -24,7 +24,6 @@ struct EditBoardingPointView: View {
 
               deleteBoardingPointButton
             }
-            .padding(.horizontal, r.dimen.spacingMedium)
             .padding(.vertical, r.dimen.spacingLarge)
             .frame(minHeight: proxy.size.height, alignment: .top)
           }
@@ -120,6 +119,7 @@ struct EditBoardingPointView: View {
       .textInputAutocapitalization(.never)
       .accessibilityLabel("탑승 지점 이름")
     }
+    .padding(.horizontal, r.dimen.spacingMedium)
   }
 
   private var busStopsSection: some View {
@@ -129,27 +129,23 @@ struct EditBoardingPointView: View {
           .font(r.font.metadata)
           .foregroundStyle(r.color.textSecondary)
       }
+      .padding(.horizontal, r.dimen.spacingMedium)
 
-      DashGroupedSurface {
-        VStack(spacing: 0) {
-          ForEach(Array(busStops.enumerated()), id: \.element.id) { index, busStop in
-            busStopRow(busStop)
-            if index < busStops.count - 1 {
-              DashListDivider(
-                leadingInset: r.dimen.spacingMedium,
-                trailingInset: r.dimen.spacingMedium
-              )
-            }
-          }
+      VStack(spacing: 0) {
+        DashListDivider.list
+        ForEach(busStops) { busStop in
+          busStopRow(busStop)
+          DashListDivider.list
         }
+        addBusStopButton
+        DashListDivider.list
       }
-
-      addBusStopButton
+      .frame(maxWidth: .infinity)
     }
   }
 
   private func busStopRow(_ busStop: BusStop) -> some View {
-    HStack(spacing: r.dimen.spacingXXSmall) {
+    DashFlatListRow(minHeight: r.dimen.richRowMinHeight) {
       Button {
         store.send(.busStopTapped(busStop.id))
       } label: {
@@ -190,7 +186,7 @@ struct EditBoardingPointView: View {
       .buttonStyle(.plain)
       .accessibilityLabel(busStopAccessibilityLabel(busStop))
       .accessibilityHint("버스 노선 선택 화면을 엽니다")
-
+    } trailing: {
       Image(systemName: "line.3.horizontal")
         .font(r.font.iconMedium)
         .foregroundStyle(r.color.textSecondary)
@@ -202,7 +198,6 @@ struct EditBoardingPointView: View {
         .draggable(String(busStop.id))
         .accessibilityLabel("\(busStop.name) 순서 변경")
         .accessibilityHint("길게 눌러 원하는 위치로 끌어 이동합니다")
-
     }
     .dropDestination(for: String.self) { items, _ in
       guard let sourceID = items.compactMap({ Int($0) }).first,
@@ -213,26 +208,22 @@ struct EditBoardingPointView: View {
       store.send(.busStopMoved(sourceID: sourceID, targetID: busStop.id))
       return true
     }
-    .padding(.leading, r.dimen.spacingMedium)
-    .padding(.trailing, r.dimen.spacingXSmall)
-    .padding(.vertical, r.dimen.rowVerticalPadding)
-    .frame(minHeight: r.dimen.richRowMinHeight)
   }
 
   private var addBusStopButton: some View {
-    DashGroupedSurface {
-      Button {
-        store.send(.addBusStopButtonTapped)
-      } label: {
+    Button {
+      store.send(.addBusStopButtonTapped)
+    } label: {
+      DashFlatListRow(minHeight: r.dimen.standardRowMinHeight) {
         Label("정류장 추가", systemImage: "plus")
           .font(r.font.sectionTitle)
           .foregroundStyle(r.color.brandMint)
-          .frame(maxWidth: .infinity)
-          .frame(minHeight: r.dimen.primaryButtonHeight)
-          .contentShape(Rectangle())
+          .frame(maxWidth: .infinity, alignment: .center)
+      } trailing: {
+        EmptyView()
       }
-      .buttonStyle(.plain)
     }
+    .buttonStyle(.plain)
     .accessibilityHint("정류장 추가 화면을 엽니다")
   }
 
@@ -246,6 +237,7 @@ struct EditBoardingPointView: View {
     .frame(minHeight: r.dimen.minimumTouchTarget)
     .buttonStyle(.plain)
     .accessibilityHint("확인 후 탑승 지점을 삭제합니다")
+    .padding(.horizontal, r.dimen.spacingMedium)
   }
 
   private var busStops: [BusStop] {

@@ -9,7 +9,7 @@
 ## 원칙
 
 1. iOS의 기본 내비게이션, 접근성, Dynamic Type 동작을 우선한다.
-2. 빠른 비교가 필요한 데이터는 평면 목록, 관련 값을 편집하는 영역은 grouped surface, 독립적인 상태 정보는 card로 표현한다.
+2. 빠른 비교가 필요한 데이터는 평면 목록, 독립적인 상태 정보와 독립된 선택 단위는 card로 표현한다. grouped surface는 서로 의존하는 입력값 묶음에만 사용한다.
 3. 같은 의미의 상태는 모든 화면에서 같은 시각 문법을 사용한다.
 4. 높이는 텍스트가 커질 수 있도록 고정값보다 최소 높이와 padding으로 정의한다.
 5. 콘텐츠 표면에는 그림자를 사용하지 않고 Divider 또는 얇은 stroke를 사용한다.
@@ -106,7 +106,8 @@
 ### Flat list row
 
 - 외부 rounded container를 사용하지 않는다.
-- 행 콘텐츠는 좌우 `16pt`, 상하 `14pt` padding을 사용한다.
+- 목록은 화면 폭을 사용한다. 행 콘텐츠와 행 사이 Divider만 좌우 `16pt` inset을 사용한다.
+- 행 콘텐츠는 상하 `14pt` padding을 사용한다.
 - 콘텐츠에 따라 compact, standard, rich 최소 높이를 선택한다.
 - 행 사이 Divider는 목록의 16pt 콘텐츠 영역 안에 둔다.
 - 행 전체 탭과 trailing 보조 액션은 독립적인 44pt 이상 터치 영역을 가진다.
@@ -122,6 +123,12 @@
 - 실시간 도착 정보처럼 각 항목이 독립적인 상태 단위일 때만 사용한다.
 - `surface` 배경, radius `16pt`, divider 색상 1pt stroke를 사용한다.
 - 콘텐츠 그림자는 사용하지 않는다.
+
+### Selectable card
+
+- 독립적인 정보 단위를 다중 선택할 때만 사용한다.
+- status card와 같은 `surface`, `16pt` radius, divider 색상 1pt stroke를 사용한다.
+- 선택 상태는 `brand.opacity(0.08)` 배경과 trailing check circle로 표시하며, stroke 색상은 바꾸지 않는다.
 
 ### Primary button
 
@@ -144,14 +151,14 @@
 - 왼쪽 전체 높이 `4pt` brand rail
 - 제목을 `selectedRowTitle`로 강조
 - 접근성 레이블에 선택 상태 포함
+- rail은 목록의 실제 leading edge에 붙고, 텍스트와 Divider만 `16pt` inset을 사용한다.
 
 탑승 지점 목록의 현재 지점과 정류장 추가 화면의 임시 선택은 같은 단일 선택 컴포넌트를 사용한다.
 
 ### 다중 선택
 
-- 단일 선택과 같은 brand 8% 배경
+- 선택 가능한 card에서는 brand 8% 배경과 trailing check circle로 포함 여부를 표시한다.
 - selection rail은 사용하지 않는다.
-- trailing check circle로 포함 여부를 표시한다.
 
 ### 지도와 목록 선택
 
@@ -169,8 +176,9 @@
 
 | 질문 | Yes | No |
 |---|---|---|
-| 여러 항목을 빠르게 비교하거나 선택하는가? | Flat list | 다음 질문 |
-| 관련된 값을 한 덩어리로 편집하는가? | Grouped surface | 다음 질문 |
+| 여러 항목을 빠르게 비교하거나 단일 선택하는가? | Flat list | 다음 질문 |
+| 독립된 정보 단위를 다중 선택하는가? | Selectable card | 다음 질문 |
+| 서로 의존하는 입력값을 한 덩어리로 편집하는가? | Grouped surface | 다음 질문 |
 | 독립적인 실시간 상태 단위인가? | Status card | 기본 배경 위 콘텐츠 |
 
 장식 목적으로 card를 사용하지 않는다.
@@ -200,7 +208,8 @@
 
 - navigation save action
 - 이름 입력
-- grouped edit surface
+- 필요한 입력값에만 grouped surface
+- 관계 엔티티는 flat list
 - 추가 action
 - 화면 하단 destructive action
 
@@ -208,8 +217,8 @@
 
 ### MultiSelectList
 
-- flat list row와 inset Divider
-- multi selection 상태
+- selectable card 목록
+- trailing check 기반 multi selection 상태
 - 완료 action
 
 적용: 버스 노선 선택 화면

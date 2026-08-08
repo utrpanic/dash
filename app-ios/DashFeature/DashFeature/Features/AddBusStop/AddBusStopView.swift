@@ -111,11 +111,10 @@ struct AddBusStopView: View {
         ForEach(Array(filteredStops.enumerated()), id: \.element.id) { index, stop in
           stopRow(stop, markerLetter: markerLetter(for: index))
           if stop.id != filteredStops.last?.id {
-            DashListDivider()
+            DashListDivider.list
           }
         }
       }
-      .padding(.horizontal, r.dimen.spacingMedium)
       .padding(.bottom, selectButtonContentInset)
     }
     .scrollIndicators(.hidden)
