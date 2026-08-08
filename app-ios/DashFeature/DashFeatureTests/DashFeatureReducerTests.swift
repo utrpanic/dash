@@ -269,8 +269,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 @MainActor
 @Test func reducerSelectsNearestBoardingPointOnTask() async {
   let location = UserLocation(
-    latitude: BoardingPoint.homaesilSsangyongApartment.centerLatitude,
-    longitude: BoardingPoint.homaesilSsangyongApartment.centerLongitude
+    latitude: BoardingPoint.homaesilSsangyongApartment.centerLatitude!,
+    longitude: BoardingPoint.homaesilSsangyongApartment.centerLongitude!
   )
   let store = TestStore(initialState: DashFeatureState()) {
     DashFeature()
@@ -339,8 +339,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 @MainActor
 @Test func reducerSelectsNearestBoardingPointFromLocationButton() async {
   let location = UserLocation(
-    latitude: BoardingPoint.theHyundaiSeoul.centerLatitude,
-    longitude: BoardingPoint.theHyundaiSeoul.centerLongitude
+    latitude: BoardingPoint.theHyundaiSeoul.centerLatitude!,
+    longitude: BoardingPoint.theHyundaiSeoul.centerLongitude!
   )
   var initialState = DashFeatureState()
   initialState.boardingPointSelection = .selected("yeongdeungpo-station")

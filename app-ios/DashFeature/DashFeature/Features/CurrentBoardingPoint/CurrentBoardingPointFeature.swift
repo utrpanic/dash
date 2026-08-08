@@ -9,6 +9,7 @@ struct CurrentBoardingPointFeature: Sendable {
       case locating
       case locationPermissionDenied
       case locationUnavailable
+      case noSelectedRoutes
       case selected(BoardingPoint.ID)
     }
 
@@ -57,14 +58,10 @@ struct CurrentBoardingPointFeature: Sendable {
       else {
         return false
       }
-      return Self.hasSelectedRoutes(boardingPoint)
+      return boardingPoint.hasSelectedRoutes
     }
     var hasBoardingPointWithSelectedRoutes: Bool {
-      boardingPoints.contains(where: Self.hasSelectedRoutes)
-    }
-
-    private static func hasSelectedRoutes(_ boardingPoint: BoardingPoint) -> Bool {
-      boardingPoint.routes.values.contains { !$0.isEmpty }
+      boardingPoints.contains(where: \.hasSelectedRoutes)
     }
   }
 
@@ -215,6 +212,11 @@ struct CurrentBoardingPointFeature: Sendable {
 
       case .nextBoardingPointButtonTapped:
         guard !state.boardingPoints.isEmpty else {
+          state.boardingPointSelection = .noSelectedRoutes
+          state.upcomingBuses = []
+          state.upcomingBusesErrorMessage = nil
+          state.isLoadingUpcomingBuses = false
+          state.lastUpdatedAt = nil
           return .none
         }
 
@@ -229,10 +231,13 @@ struct CurrentBoardingPointFeature: Sendable {
           .map { offset in
             boardingPoints[(selectedIndex + offset) % boardingPoints.count]
           }
-          .first { boardingPoint in
-            boardingPoint.routes.values.contains { !$0.isEmpty }
-          }
+          .first(where: \.hasSelectedRoutes)
         guard let nextBoardingPoint else {
+          state.boardingPointSelection = .noSelectedRoutes
+          state.upcomingBuses = []
+          state.upcomingBusesErrorMessage = nil
+          state.isLoadingUpcomingBuses = false
+          state.lastUpdatedAt = nil
           return .none
         }
 
@@ -255,7 +260,11 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
         state.boardingPoints[index] = boardingPoint
-        return .none
+        guard boardingPoint.id == state.selectedBoardingPointID else {
+          return .none
+        }
+        state.lastUpdatedAt = nil
+        return .send(.loadUpcomingBuses)
 
       case let .setCurrentBoardingPoint(boardingPoint):
         state.boardingPointSelection = .selected(boardingPoint.id)
@@ -287,8 +296,11 @@ struct CurrentBoardingPointFeature: Sendable {
           to: location,
           in: state.boardingPoints
         ) else {
-          state.boardingPointSelection = .locationUnavailable
+          state.boardingPointSelection = .noSelectedRoutes
+          state.upcomingBuses = []
+          state.upcomingBusesErrorMessage = nil
           state.isLoadingUpcomingBuses = false
+          state.lastUpdatedAt = nil
           return .none
         }
         if nearestBoardingPointID != state.selectedBoardingPointID {
@@ -325,7 +337,7 @@ private extension CurrentBoardingPointFeature {
     to location: UserLocation,
     in boardingPoints: [BoardingPoint]
   ) -> BoardingPoint.ID? {
-    boardingPoints.map { boardingPoint in
+    boardingPoints.filter(\.hasSelectedRoutes).map { boardingPoint in
       (
         id: boardingPoint.id,
         distance: distance(from: location, to: boardingPoint)
@@ -336,11 +348,16 @@ private extension CurrentBoardingPointFeature {
   }
 
   static func distance(from location: UserLocation, to boardingPoint: BoardingPoint) -> Double {
+    guard let latitude = boardingPoint.centerLatitude,
+          let longitude = boardingPoint.centerLongitude
+    else {
+      return .greatestFiniteMagnitude
+    }
     let earthRadius = 6_371_000.0
-    let latitudeDelta = radians(boardingPoint.centerLatitude - location.latitude)
-    let longitudeDelta = radians(boardingPoint.centerLongitude - location.longitude)
+    let latitudeDelta = radians(latitude - location.latitude)
+    let longitudeDelta = radians(longitude - location.longitude)
     let sourceLatitude = radians(location.latitude)
-    let destinationLatitude = radians(boardingPoint.centerLatitude)
+    let destinationLatitude = radians(latitude)
     let haversine = sin(latitudeDelta / 2) * sin(latitudeDelta / 2)
       + cos(sourceLatitude) * cos(destinationLatitude)
       * sin(longitudeDelta / 2) * sin(longitudeDelta / 2)

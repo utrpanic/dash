@@ -61,9 +61,10 @@ struct CurrentBoardingPointView: View {
             Image(systemName: "bus")
               .font(.title2.weight(.regular))
               .foregroundStyle(r.color.textSecondary)
-            Text("선택된 버스 노선이 없습니다.")
+            Text("선택한 버스 노선이 없습니다.\n탑승 지점을 편집해 노선을 선택하세요.")
               .font(r.font.body)
               .foregroundStyle(r.color.textSecondary)
+              .multilineTextAlignment(.center)
           }
           .frame(maxWidth: .infinity)
           Spacer()
@@ -186,7 +187,7 @@ struct CurrentBoardingPointView: View {
   }
 
   private var areFloatingButtonsDisabled: Bool {
-    store.isLoadingUpcomingBuses || store.boardingPointIsNotAvailable
+    store.isLoadingUpcomingBuses || !store.selectedBoardingPointHasSelectedRoutes
   }
 
   private func elapsedTimeText(from startDate: Date, to endDate: Date) -> String {
@@ -224,6 +225,8 @@ struct CurrentBoardingPointView: View {
       return "위치 권한이 없습니다.\n상단에서 목적지를 선택해주세요."
     case .locationUnavailable:
       return "현재 위치를 확인할 수 없습니다.\n상단에서 목적지를 선택해주세요."
+    case .noSelectedRoutes:
+      return "선택한 버스 노선이 없습니다.\n탑승 지점을 편집해 노선을 선택하세요."
     case .selected:
       return nil
     }
@@ -260,6 +263,8 @@ private struct CurrentBoardingPointNavigationTitleView: View {
       ("위치 권한 없음", false)
     case .locationUnavailable:
       ("위치 확인 불가", false)
+    case .noSelectedRoutes:
+      ("선택 노선 없음", false)
     case let .selected(boardingPointID):
       (store.boardingPoints.first { $0.id == boardingPointID }?.name ?? "", true)
     }
@@ -285,7 +290,7 @@ private struct CurrentBoardingPointNavigationTitleView: View {
     switch store.boardingPointSelection {
     case .selected:
       return r.color.textPrimary
-    case .locating, .locationPermissionDenied, .locationUnavailable:
+    case .locating, .locationPermissionDenied, .locationUnavailable, .noSelectedRoutes:
       return r.color.textSecondary
     }
   }

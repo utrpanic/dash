@@ -8,17 +8,19 @@ struct AddBusStopView: View {
 
   init(store: StoreOf<AddBusStopFeature>) {
     self.store = store
-    let center = CLLocationCoordinate2D(
-      latitude: store.boardingPoint.centerLatitude,
-      longitude: store.boardingPoint.centerLongitude
-    )
-    _mapPosition = State(initialValue: .region(
-      MKCoordinateRegion(
-        center: center,
-        latitudinalMeters: 900,
-        longitudinalMeters: 900
-      )
-    ))
+    if let latitude = store.boardingPoint.centerLatitude,
+       let longitude = store.boardingPoint.centerLongitude {
+      let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+      _mapPosition = State(initialValue: .region(
+        MKCoordinateRegion(
+          center: center,
+          latitudinalMeters: 900,
+          longitudinalMeters: 900
+        )
+      ))
+    } else {
+      _mapPosition = State(initialValue: .automatic)
+    }
   }
 
   var body: some View {
@@ -183,7 +185,11 @@ struct AddBusStopView: View {
           || ($0.alias?.localizedCaseInsensitiveContains(query) ?? false)
           || String($0.id).contains(query)
       }
-    return stops.sorted { distance(to: $0) < distance(to: $1) }
+    guard let referenceLocation else { return stops }
+    return stops.sorted {
+      referenceLocation.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))
+        < referenceLocation.distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude))
+    }
   }
 
   private var selectButtonContentInset: CGFloat {
@@ -202,11 +208,15 @@ struct AddBusStopView: View {
     )
   }
 
-  private func distance(to stop: BusStop) -> CLLocationDistance {
-    let center = store.userLocation.map {
-      CLLocation(latitude: $0.latitude, longitude: $0.longitude)
-    } ?? CLLocation(latitude: store.boardingPoint.centerLatitude, longitude: store.boardingPoint.centerLongitude)
-    return center.distance(from: CLLocation(latitude: stop.latitude, longitude: stop.longitude))
+  private var referenceLocation: CLLocation? {
+    if let userLocation = store.userLocation {
+      return CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+    }
+    if let latitude = store.boardingPoint.centerLatitude,
+       let longitude = store.boardingPoint.centerLongitude {
+      return CLLocation(latitude: latitude, longitude: longitude)
+    }
+    return nil
   }
 
   private func coordinate(for stop: BusStop) -> CLLocationCoordinate2D {

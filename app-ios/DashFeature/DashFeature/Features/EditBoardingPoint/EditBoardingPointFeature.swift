@@ -11,14 +11,12 @@ struct EditBoardingPointFeature {
     var boardingPoint: BoardingPoint
     var name: String
     var routes: [BusStop: Set<BusRoute>]
-    var busStopOrder: [BusStop.ID]
     var deleteConfirmation: DeleteConfirmation?
 
     init(boardingPoint: BoardingPoint) {
       self.boardingPoint = boardingPoint
       self.name = boardingPoint.name
       self.routes = boardingPoint.routes
-      self.busStopOrder = boardingPoint.busStopOrder
       self.deleteConfirmation = nil
     }
   }
@@ -26,7 +24,7 @@ struct EditBoardingPointFeature {
   enum Action: Equatable {
     case addBusStopButtonTapped
     case busStopAdded(BusStop)
-    case busStopMoved(sourceID: BusStop.ID, targetID: BusStop.ID)
+    case busStopDeleteButtonTapped(BusStop.ID)
     case busStopRoutesChanged(busStopID: BusStop.ID, routes: Set<BusRoute>)
     case busStopTapped(BusStop.ID)
     case deleteBoardingPointButtonTapped
@@ -61,19 +59,13 @@ struct EditBoardingPointFeature {
           return .none
         }
         state.routes[busStop] = []
-        state.busStopOrder.append(busStop.id)
         return .none
 
-      case let .busStopMoved(sourceID, targetID):
-        guard sourceID != targetID,
-              let sourceIndex = state.busStopOrder.firstIndex(of: sourceID),
-              let targetIndex = state.busStopOrder.firstIndex(of: targetID)
-        else {
+      case let .busStopDeleteButtonTapped(busStopID):
+        guard let busStop = state.routes.keys.first(where: { $0.id == busStopID }) else {
           return .none
         }
-        state.busStopOrder.remove(at: sourceIndex)
-        let insertionIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
-        state.busStopOrder.insert(sourceID, at: insertionIndex)
+        state.routes.removeValue(forKey: busStop)
         return .none
 
       case let .busStopRoutesChanged(busStopID, routes):
@@ -126,8 +118,7 @@ struct EditBoardingPointFeature {
               BoardingPoint(
                 id: state.boardingPoint.id,
                 name: name,
-                routes: state.routes,
-                busStopOrder: state.busStopOrder
+                routes: state.routes
               )
             )
           )
@@ -144,8 +135,7 @@ struct EditBoardingPointFeature {
     return BoardingPoint(
       id: state.boardingPoint.id,
       name: name.isEmpty ? state.boardingPoint.name : name,
-      routes: state.routes,
-      busStopOrder: state.busStopOrder
+      routes: state.routes
     )
   }
 }

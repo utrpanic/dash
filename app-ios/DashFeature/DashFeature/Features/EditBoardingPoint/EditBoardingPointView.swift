@@ -186,26 +186,20 @@ struct EditBoardingPointView: View {
       .accessibilityLabel(busStopAccessibilityLabel(busStop))
       .accessibilityHint("버스 노선 선택 화면을 엽니다")
     } trailing: {
-      Image(systemName: "line.3.horizontal")
-        .font(r.font.iconMedium)
-        .foregroundStyle(r.color.textSecondary)
-        .frame(
-          width: r.dimen.minimumTouchTarget,
-          height: r.dimen.minimumTouchTarget
-        )
-        .contentShape(Rectangle())
-        .draggable(String(busStop.id))
-        .accessibilityLabel("\(busStop.name) 순서 변경")
-        .accessibilityHint("길게 눌러 원하는 위치로 끌어 이동합니다")
-    }
-    .dropDestination(for: String.self) { items, _ in
-      guard let sourceID = items.compactMap({ Int($0) }).first,
-            sourceID != busStop.id
-      else {
-        return false
+      Menu {
+        Button("정류장 삭제", role: .destructive) {
+          store.send(.busStopDeleteButtonTapped(busStop.id))
+        }
+      } label: {
+        Image(systemName: "ellipsis.circle")
+          .font(r.font.iconMedium)
+          .foregroundStyle(r.color.textSecondary)
+          .frame(
+            width: r.dimen.minimumTouchTarget,
+            height: r.dimen.minimumTouchTarget
+          )
       }
-      store.send(.busStopMoved(sourceID: sourceID, targetID: busStop.id))
-      return true
+      .accessibilityLabel("\(busStop.name) 메뉴")
     }
   }
 
@@ -240,18 +234,13 @@ struct EditBoardingPointView: View {
   }
 
   private var busStops: [BusStop] {
-    let orderedStops = store.busStopOrder.compactMap { id in
-      store.routes.keys.first(where: { $0.id == id })
-    }
-    let orderedIDs = Set(orderedStops.map(\.id))
-    let remainingStops = store.routes.keys.filter { !orderedIDs.contains($0.id) }.sorted {
+    store.routes.keys.sorted {
       let comparison = $0.name.localizedStandardCompare($1.name)
       if comparison == .orderedSame {
         return $0.id < $1.id
       }
       return comparison == .orderedAscending
     }
-    return orderedStops + remainingStops
   }
 
   private var selectedRouteCount: Int {

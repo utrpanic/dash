@@ -2,46 +2,29 @@ public struct BoardingPoint: Equatable, Hashable, Identifiable, Sendable {
   public let id: String
   public let name: String
   public let routes: [BusStop: Set<BusRoute>]
-  public let busStopOrder: [BusStop.ID]
 
-  public var centerLatitude: Double {
-    routes.keys.map(\.latitude).reduce(0, +) / Double(routes.count)
+  public var hasSelectedRoutes: Bool {
+    routes.values.contains { !$0.isEmpty }
   }
 
-  public var centerLongitude: Double {
-    routes.keys.map(\.longitude).reduce(0, +) / Double(routes.count)
+  public var centerLatitude: Double? {
+    guard !routes.isEmpty else { return nil }
+    return routes.keys.map(\.latitude).reduce(0, +) / Double(routes.count)
+  }
+
+  public var centerLongitude: Double? {
+    guard !routes.isEmpty else { return nil }
+    return routes.keys.map(\.longitude).reduce(0, +) / Double(routes.count)
   }
 
   public init(
     id: String,
     name: String,
-    routes: [BusStop: Set<BusRoute>],
-    busStopOrder: [BusStop.ID]? = nil
+    routes: [BusStop: Set<BusRoute>]
   ) {
     self.id = id
     self.name = name
     self.routes = routes
-
-    let routeIDs = Set(routes.keys.map(\.id))
-    var seen = Set<BusStop.ID>()
-    let requestedOrder = busStopOrder ?? routes.keys.map(\.id)
-    let normalizedOrder = requestedOrder.compactMap { id -> BusStop.ID? in
-      guard routeIDs.contains(id), seen.insert(id).inserted else {
-        return nil
-      }
-      return id
-    }
-    let remainingOrder = routes.keys
-      .filter { !seen.contains($0.id) }
-      .sorted {
-        let comparison = $0.name.localizedStandardCompare($1.name)
-        if comparison == .orderedSame {
-          return $0.id < $1.id
-        }
-        return comparison == .orderedAscending
-      }
-      .map(\.id)
-    self.busStopOrder = normalizedOrder + remainingOrder
   }
 }
 
@@ -59,10 +42,6 @@ public extension BoardingPoint {
         .gyeonggi_13_1,
         .gyeonggi_13_5,
       ],
-    ],
-    busStopOrder: [
-      BusStop.suwonStationExit7Outer.id,
-      BusStop.suwonStationExit7Inner.id,
     ]
   )
   static let homaesilSsangyongApartment = BoardingPoint(
