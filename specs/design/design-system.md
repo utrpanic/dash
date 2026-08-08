@@ -103,6 +103,13 @@
 - 주요 텍스트 액션은 `navigationAction`과 brand color를 사용한다.
 - 내비게이션 아래에는 `divider`를 표시한다.
 
+### Action hierarchy
+
+- 새 항목 진입은 navigation bar의 `+` 아이콘을 사용한다.
+- 편집값 저장과 선택 완료는 navigation bar의 brand 텍스트 액션(`저장`, `완료`)을 사용한다.
+- 다음 화면으로 이동하는 추가 액션은 brand 텍스트와 plus를 사용하는 inline action으로 둔다.
+- 현재 화면에서 선택 결과를 즉시 적용하는 단일 액션만 brand 배경 primary button을 사용한다.
+
 ### Flat list row
 
 - 외부 rounded container를 사용하지 않는다.

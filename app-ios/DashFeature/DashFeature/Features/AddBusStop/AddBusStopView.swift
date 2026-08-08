@@ -164,7 +164,7 @@ struct AddBusStopView: View {
     Button {
       store.send(.selectButtonTapped)
     } label: {
-      Text("이 정류장 선택")
+      Text("선택한 정류장 추가")
     }
     .buttonStyle(DashPrimaryButtonStyle(isFloating: true))
     .padding(.top, r.dimen.spacingSmall)
