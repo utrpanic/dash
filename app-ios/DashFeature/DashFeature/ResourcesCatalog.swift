@@ -21,6 +21,8 @@ enum r {
     static let metadata = Font.system(size: 14, weight: .regular)
     static let caption = Font.system(size: 12, weight: .regular)
     static let navigationAction = Font.system(size: 17, weight: .semibold)
+    static let iconSmall = Font.system(size: 16, weight: .semibold)
+    static let iconMedium = Font.system(size: 18, weight: .semibold)
     static let arrivalRoute = Font.system(size: 40, weight: .semibold)
     static let arrivalValue = Font.system(size: 48, weight: .regular)
   }

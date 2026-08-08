@@ -181,7 +181,7 @@ struct EditBoardingPointView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
 
           Image(systemName: "chevron.right")
-            .font(.system(size: 16, weight: .semibold))
+            .font(r.font.iconSmall)
             .foregroundStyle(r.color.textSecondary)
             .accessibilityHidden(true)
         }
@@ -192,7 +192,7 @@ struct EditBoardingPointView: View {
       .accessibilityHint("버스 노선 선택 화면을 엽니다")
 
       Image(systemName: "line.3.horizontal")
-        .font(.system(size: 18, weight: .semibold))
+        .font(r.font.iconMedium)
         .foregroundStyle(r.color.textSecondary)
         .frame(
           width: r.dimen.minimumTouchTarget,
