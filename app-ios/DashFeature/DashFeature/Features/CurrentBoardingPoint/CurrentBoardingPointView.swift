@@ -35,6 +35,7 @@ struct CurrentBoardingPointView: View {
         .ignoresSafeArea()
       VStack(spacing: 0) {
         DashListDivider()
+          .padding(.horizontal, -r.dimen.spacingMedium)
         if store.isLoadingUpcomingBuses {
           Spacer()
           ProgressView()
