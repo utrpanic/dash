@@ -49,9 +49,6 @@ struct BusRouteSelectionView: View {
     }
     .toolbarBackground(r.color.background, for: .navigationBar)
     .toolbarBackground(.visible, for: .navigationBar)
-    .task {
-      store.send(.task)
-    }
   }
 
   private var busStopSummary: some View {
@@ -83,11 +80,7 @@ struct BusRouteSelectionView: View {
       }
       .padding(.horizontal, r.dimen.spacingMedium)
 
-      if store.isLoading, store.routeOptions.isEmpty {
-        ProgressView()
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, r.dimen.spacingXLarge)
-      } else if store.routeOptions.isEmpty {
+      if store.routeOptions.isEmpty {
         emptyRoutesState
       } else {
         routeList
@@ -97,11 +90,6 @@ struct BusRouteSelectionView: View {
 
   private var routeList: some View {
     LazyVStack(spacing: 0) {
-      if let errorMessage = store.errorMessage {
-        retryMessage(errorMessage)
-        DashListDivider()
-      }
-
       ForEach(Array(store.routeOptions.enumerated()), id: \.element.id) { index, option in
         routeRow(option)
         if index < store.routeOptions.count - 1 {
@@ -142,42 +130,13 @@ struct BusRouteSelectionView: View {
   }
 
   private var emptyRoutesState: some View {
-    VStack(spacing: r.dimen.spacingSmall) {
-      Text(store.errorMessage ?? "이 정류장의 노선 정보가 없습니다.")
-        .font(r.font.body)
-        .foregroundStyle(r.color.textSecondary)
-        .multilineTextAlignment(.center)
-
-      if store.errorMessage != nil {
-        Button("다시 시도") {
-          store.send(.retryButtonTapped)
-        }
-        .font(r.font.navigationAction)
-        .foregroundStyle(r.color.brandMint)
-        .frame(minHeight: r.dimen.minimumTouchTarget)
-        .buttonStyle(.plain)
-      }
-    }
+    Text("이 정류장의 노선 정보가 없습니다.")
+      .font(r.font.body)
+      .foregroundStyle(r.color.textSecondary)
+      .multilineTextAlignment(.center)
     .frame(maxWidth: .infinity)
     .padding(.horizontal, r.dimen.spacingMedium)
     .padding(.vertical, r.dimen.spacingXLarge)
-  }
-
-  private func retryMessage(_ message: String) -> some View {
-    Button {
-      store.send(.retryButtonTapped)
-    } label: {
-      HStack(spacing: r.dimen.spacingXSmall) {
-        Text(message)
-          .font(r.font.metadata)
-        Image(systemName: "arrow.clockwise")
-      }
-      .foregroundStyle(r.color.textSecondary)
-      .frame(maxWidth: .infinity)
-      .frame(minHeight: r.dimen.minimumTouchTarget)
-    }
-    .buttonStyle(.plain)
-    .accessibilityHint("노선 목록을 다시 불러옵니다")
   }
 
   private var selectedRouteCount: some View {
