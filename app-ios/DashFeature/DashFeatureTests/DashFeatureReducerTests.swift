@@ -209,6 +209,64 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 }
 
 @MainActor
+@Test func reducerSkipsBoardingPointWithoutSelectedRoutes() async {
+  let emptyBoardingPoint = BoardingPoint(
+    id: "empty-boarding-point",
+    name: "노선 미선택",
+    routes: [.homaesilSsangyongApartment: []]
+  )
+  var initialState = DashFeatureState()
+  initialState.boardingPoints = [
+    .suwonStation,
+    emptyBoardingPoint,
+    .homaesilSsangyongApartment,
+  ]
+  initialState.boardingPointSelection = .selected(BoardingPoint.suwonStation.id)
+  let store = TestStore(initialState: initialState) {
+    DashFeature()
+  } withDependencies: {
+    $0.date.now = testNow
+    $0.busArrivalAPIClient.fetchArrivals = { _ in [] }
+  }
+
+  await store.send(.nextBoardingPointButtonTapped) {
+    $0.boardingPointSelection = .selected(BoardingPoint.homaesilSsangyongApartment.id)
+  }
+  await store.receive(.loadUpcomingBuses) {
+    $0.isLoadingUpcomingBuses = true
+    $0.upcomingBusesErrorMessage = nil
+  }
+  await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+    $0.isLoadingUpcomingBuses = false
+    $0.upcomingBuses = []
+    $0.upcomingBusesErrorMessage = nil
+    $0.lastUpdatedAt = testNow
+  }
+}
+
+@MainActor
+@Test func reducerDoesNotLoadArrivalsWithoutSelectedRoutes() async {
+  let emptyBoardingPoint = BoardingPoint(
+    id: "empty-boarding-point",
+    name: "노선 미선택",
+    routes: [.homaesilSsangyongApartment: []]
+  )
+  var initialState = DashFeatureState()
+  initialState.boardingPoints = [emptyBoardingPoint]
+  initialState.boardingPointSelection = .selected(emptyBoardingPoint.id)
+  initialState.upcomingBuses = .mock
+  initialState.lastUpdatedAt = testNow
+  let store = TestStore(initialState: initialState) {
+    DashFeature()
+  }
+
+  await store.send(.loadUpcomingBuses) {
+    $0.upcomingBuses = []
+    $0.lastUpdatedAt = nil
+  }
+}
+
+@MainActor
 @Test func reducerSelectsNearestBoardingPointOnTask() async {
   let location = UserLocation(
     latitude: BoardingPoint.homaesilSsangyongApartment.centerLatitude,

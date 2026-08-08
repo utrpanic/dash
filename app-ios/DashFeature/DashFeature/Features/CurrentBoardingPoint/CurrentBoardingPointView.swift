@@ -55,6 +55,18 @@ struct CurrentBoardingPointView: View {
             .foregroundStyle(r.color.textSecondary)
             .frame(maxWidth: .infinity)
           Spacer()
+        } else if !store.selectedBoardingPointHasSelectedRoutes {
+          Spacer()
+          VStack(spacing: r.dimen.spacingXSmall) {
+            Image(systemName: "bus")
+              .font(.title2.weight(.regular))
+              .foregroundStyle(r.color.textSecondary)
+            Text("선택된 버스 노선이 없습니다.")
+              .font(r.font.body)
+              .foregroundStyle(r.color.textSecondary)
+          }
+          .frame(maxWidth: .infinity)
+          Spacer()
         } else if store.upcomingBuses.isEmpty {
           Spacer()
           VStack(spacing: r.dimen.spacingXSmall) {
@@ -234,7 +246,10 @@ private struct CurrentBoardingPointNavigationTitleView: View {
       }
     }
     .buttonStyle(.plain)
-    .disabled(store.boardingPointSelection == .locating || store.boardingPoints.isEmpty)
+    .disabled(
+      store.boardingPointSelection == .locating
+        || !store.hasBoardingPointWithSelectedRoutes
+    )
   }
 
   private var boardingPointTitleLabel: some View {

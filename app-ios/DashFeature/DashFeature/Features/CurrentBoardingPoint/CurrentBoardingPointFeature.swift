@@ -49,6 +49,23 @@ struct CurrentBoardingPointFeature: Sendable {
     var boardingPointIsNotAvailable: Bool {
       selectedBoardingPointID == nil
     }
+    var selectedBoardingPointHasSelectedRoutes: Bool {
+      guard let selectedBoardingPointID,
+            let boardingPoint = boardingPoints.first(
+              where: { $0.id == selectedBoardingPointID }
+            )
+      else {
+        return false
+      }
+      return Self.hasSelectedRoutes(boardingPoint)
+    }
+    var hasBoardingPointWithSelectedRoutes: Bool {
+      boardingPoints.contains(where: Self.hasSelectedRoutes)
+    }
+
+    private static func hasSelectedRoutes(_ boardingPoint: BoardingPoint) -> Bool {
+      boardingPoint.routes.values.contains { !$0.isEmpty }
+    }
   }
 
   enum Action: Equatable {
@@ -150,6 +167,14 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
 
+        guard state.selectedBoardingPointHasSelectedRoutes else {
+          state.upcomingBuses = []
+          state.isLoadingUpcomingBuses = false
+          state.upcomingBusesErrorMessage = nil
+          state.lastUpdatedAt = nil
+          return .cancel(id: CancelID.loadUpcomingBuses)
+        }
+
         state.isLoadingUpcomingBuses = true
         state.upcomingBusesErrorMessage = nil
 
@@ -193,13 +218,25 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
 
+        let boardingPoints = state.boardingPoints
         let selectedIndex = state.selectedBoardingPointID
           .flatMap { selectedBoardingPointID in
-            state.boardingPoints.firstIndex { $0.id == selectedBoardingPointID }
+            boardingPoints.firstIndex { $0.id == selectedBoardingPointID }
           } ?? -1
-        let nextIndex = state.boardingPoints.index(after: selectedIndex)
-          % state.boardingPoints.count
-        state.boardingPointSelection = .selected(state.boardingPoints[nextIndex].id)
+
+        let nextBoardingPoint = (1...boardingPoints.count)
+          .lazy
+          .map { offset in
+            boardingPoints[(selectedIndex + offset) % boardingPoints.count]
+          }
+          .first { boardingPoint in
+            boardingPoint.routes.values.contains { !$0.isEmpty }
+          }
+        guard let nextBoardingPoint else {
+          return .none
+        }
+
+        state.boardingPointSelection = .selected(nextBoardingPoint.id)
         state.lastUpdatedAt = nil
         return .send(.loadUpcomingBuses)
 
