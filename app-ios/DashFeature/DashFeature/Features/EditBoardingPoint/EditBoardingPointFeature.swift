@@ -38,7 +38,7 @@ struct EditBoardingPointFeature {
 
     enum Delegate: Equatable {
       case addBusStopRequested(BoardingPoint)
-      case busRouteSelectionRequested(BoardingPoint, BusStop)
+      case selectBusRoutesRequested(BoardingPoint, BusStop)
       case deleteCompleted(BoardingPoint.ID)
       case saveCompleted(BoardingPoint)
     }
@@ -89,7 +89,7 @@ struct EditBoardingPointFeature {
         }
         return .send(
           .delegate(
-            .busRouteSelectionRequested(
+            .selectBusRoutesRequested(
               updatedBoardingPoint(from: state),
               busStop
             )

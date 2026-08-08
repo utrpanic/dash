@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Foundation
 
 @Reducer
-struct BusRouteSelectionFeature {
+struct SelectBusRoutesFeature {
   @ObservableState
   struct State: Equatable {
     struct RouteOption: Equatable, Identifiable, Sendable {

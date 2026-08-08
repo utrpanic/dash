@@ -22,7 +22,7 @@ struct DashFeature {
     case boardingPoints(BoardingPointsFeature)
     case editBoardingPoint(EditBoardingPointFeature)
     case addBusStop(AddBusStopFeature)
-    case busRouteSelection(BusRouteSelectionFeature)
+    case selectBusRoutes(SelectBusRoutesFeature)
   }
 
   init() {}
@@ -99,13 +99,13 @@ struct DashFeature {
         .element(
           id: _,
           action: .editBoardingPoint(
-            .delegate(.busRouteSelectionRequested(boardingPoint, busStop))
+            .delegate(.selectBusRoutesRequested(boardingPoint, busStop))
           )
         )
       ):
         state.path.append(
-          .busRouteSelection(
-            BusRouteSelectionFeature.State(
+          .selectBusRoutes(
+            SelectBusRoutesFeature.State(
               boardingPoint: boardingPoint,
               busStop: busStop
             )
@@ -137,7 +137,7 @@ struct DashFeature {
       case let .path(
         .element(
           id: _,
-          action: .busRouteSelection(
+          action: .selectBusRoutes(
             .delegate(.selectionCompleted(busStop, routes))
           )
         )

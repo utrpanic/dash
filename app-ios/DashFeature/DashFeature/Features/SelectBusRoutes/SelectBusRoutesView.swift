@@ -1,8 +1,8 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct BusRouteSelectionView: View {
-  let store: StoreOf<BusRouteSelectionFeature>
+struct SelectBusRoutesView: View {
+  let store: StoreOf<SelectBusRoutesFeature>
 
   var body: some View {
     ZStack {
@@ -101,7 +101,7 @@ struct BusRouteSelectionView: View {
   }
 
   private func routeRow(
-    _ option: BusRouteSelectionFeature.State.RouteOption
+    _ option: SelectBusRoutesFeature.State.RouteOption
   ) -> some View {
     let isSelected = store.selectedRouteIDs.contains(option.id)
 
@@ -150,7 +150,7 @@ struct BusRouteSelectionView: View {
 
   @ViewBuilder
   private func routeDetails(
-    _ option: BusRouteSelectionFeature.State.RouteOption
+    _ option: SelectBusRoutesFeature.State.RouteOption
   ) -> some View {
     VStack(alignment: .leading, spacing: r.dimen.spacingXXSmall) {
       Text(
@@ -174,7 +174,7 @@ struct BusRouteSelectionView: View {
   }
 
   private func routeDescription(
-    _ option: BusRouteSelectionFeature.State.RouteOption
+    _ option: SelectBusRoutesFeature.State.RouteOption
   ) -> String {
     var components = [
       option.directionName.isEmpty
@@ -203,14 +203,14 @@ struct BusRouteSelectionView: View {
 
 #Preview {
   NavigationStack {
-    BusRouteSelectionView(
+    SelectBusRoutesView(
       store: Store(
-        initialState: BusRouteSelectionFeature.State(
+        initialState: SelectBusRoutesFeature.State(
           boardingPoint: .suwonStation,
           busStop: .suwonStationExit7Outer
         )
       ) {
-        BusRouteSelectionFeature()
+        SelectBusRoutesFeature()
       }
     )
   }
