@@ -50,3 +50,57 @@ struct DashFlatListRow<Content: View, Trailing: View>: View {
     }
   }
 }
+
+struct DashGroupedSurface<Content: View>: View {
+  private let content: Content
+
+  init(@ViewBuilder content: () -> Content) {
+    self.content = content()
+  }
+
+  var body: some View {
+    content
+      .background(
+        r.color.surface,
+        in: RoundedRectangle(
+          cornerRadius: r.dimen.surfaceRadius,
+          style: .continuous
+        )
+      )
+      .overlay {
+        RoundedRectangle(
+          cornerRadius: r.dimen.surfaceRadius,
+          style: .continuous
+        )
+        .stroke(
+          r.color.textSecondary.opacity(r.opacity.divider),
+          lineWidth: 1
+        )
+      }
+  }
+}
+
+struct DashSectionHeader<Trailing: View>: View {
+  let title: String
+  private let trailing: Trailing
+
+  init(
+    _ title: String,
+    @ViewBuilder trailing: () -> Trailing
+  ) {
+    self.title = title
+    self.trailing = trailing()
+  }
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text(title)
+        .font(r.font.sectionTitle)
+        .foregroundStyle(r.color.textPrimary)
+
+      Spacer(minLength: r.dimen.spacingSmall)
+
+      trailing
+    }
+  }
+}

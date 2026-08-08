@@ -13,6 +13,7 @@ enum r {
   enum font {
     static let screenTitle = Font.system(size: 24, weight: .regular)
     static let sectionTitle = Font.system(size: 17, weight: .semibold)
+    static let input = Font.system(size: 20, weight: .regular)
     static let rowTitle = Font.system(size: 20, weight: .medium)
     static let selectedRowTitle = Font.system(size: 20, weight: .semibold)
     static let body = Font.system(size: 16, weight: .regular)

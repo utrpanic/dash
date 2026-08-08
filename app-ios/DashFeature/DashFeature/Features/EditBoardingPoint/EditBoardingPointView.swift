@@ -11,23 +11,21 @@ struct EditBoardingPointView: View {
         .ignoresSafeArea()
 
       VStack(spacing: 0) {
-        Divider()
-          .background(r.color.textSecondary.opacity(0.25))
-          .padding(.horizontal, 16)
+        DashListDivider()
+          .padding(.horizontal, r.dimen.spacingMedium)
 
         GeometryReader { proxy in
           ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: r.dimen.spacingLarge) {
               nameSection
               busStopsSection
 
-              Spacer(minLength: 56)
+              Spacer(minLength: r.dimen.primaryButtonHeight)
 
               deleteBoardingPointButton
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 24)
-            .padding(.bottom, 24)
+            .padding(.horizontal, r.dimen.spacingMedium)
+            .padding(.vertical, r.dimen.spacingLarge)
             .frame(minHeight: proxy.size.height, alignment: .top)
           }
           .scrollIndicators(.hidden)
@@ -39,19 +37,23 @@ struct EditBoardingPointView: View {
     .toolbar {
       ToolbarItem(placement: .principal) {
         Text("탑승 지점 편집")
-          .font(.system(size: 24, weight: .regular))
+          .font(r.font.screenTitle)
           .foregroundStyle(r.color.textPrimary)
       }
       ToolbarItem(placement: .topBarTrailing) {
         Button {
-          
+          store.send(.saveButtonTapped)
         } label: {
           Text("저장")
-            .font(.system(size: 20, weight: .regular))
+            .font(r.font.navigationAction)
             .foregroundStyle(r.color.brandMint)
+            .frame(minWidth: r.dimen.minimumTouchTarget)
+            .frame(minHeight: r.dimen.minimumTouchTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(trimmedName.isEmpty)
+        .opacity(trimmedName.isEmpty ? r.opacity.disabled : 1)
         .accessibilityHint("변경한 탑승 지점을 저장합니다")
       }
       .sharedBackgroundVisibility(.hidden)
@@ -81,9 +83,10 @@ struct EditBoardingPointView: View {
   }
 
   private var nameSection: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
       Text("이름")
-        .font(.system(size: 15, weight: .medium))
+        .font(r.font.metadata)
+        .fontWeight(.medium)
         .foregroundStyle(r.color.textSecondary)
 
       TextField(
@@ -93,17 +96,26 @@ struct EditBoardingPointView: View {
           set: { store.send(.nameChanged($0)) }
         )
       )
-      .font(.system(size: 20, weight: .regular))
+      .font(r.font.input)
       .foregroundStyle(r.color.textPrimary)
-      .padding(.horizontal, 16)
-      .frame(height: 52)
+      .padding(.horizontal, r.dimen.spacingMedium)
+      .frame(minHeight: r.dimen.textFieldHeight)
       .background(
         r.color.surface,
-        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        in: RoundedRectangle(
+          cornerRadius: r.dimen.controlRadius,
+          style: .continuous
+        )
       )
       .overlay {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-          .stroke(r.color.textSecondary.opacity(0.18), lineWidth: 1)
+        RoundedRectangle(
+          cornerRadius: r.dimen.controlRadius,
+          style: .continuous
+        )
+        .stroke(
+          r.color.textSecondary.opacity(r.opacity.divider),
+          lineWidth: 1
+        )
       }
       .textInputAutocapitalization(.never)
       .accessibilityLabel("탑승 지점 이름")
@@ -111,27 +123,25 @@ struct EditBoardingPointView: View {
   }
 
   private var busStopsSection: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("정류장")
-        .font(.system(size: 17, weight: .semibold))
-        .foregroundStyle(r.color.textPrimary)
-      VStack(spacing: 0) {
-        ForEach(Array(busStops.enumerated()), id: \.element.id) { index, busStop in
-          busStopRow(busStop)
-          if index < busStops.count - 1 {
-            Divider()
-              .background(r.color.textSecondary.opacity(0.25))
-              .padding(.horizontal, 24)
+    VStack(alignment: .leading, spacing: r.dimen.spacingSmall) {
+      DashSectionHeader("정류장") {
+        Text("\(busStops.count)개 · \(selectedRouteCount)개 노선")
+          .font(r.font.metadata)
+          .foregroundStyle(r.color.textSecondary)
+      }
+
+      DashGroupedSurface {
+        VStack(spacing: 0) {
+          ForEach(Array(busStops.enumerated()), id: \.element.id) { index, busStop in
+            busStopRow(busStop)
+            if index < busStops.count - 1 {
+              DashListDivider(
+                leadingInset: r.dimen.spacingMedium,
+                trailingInset: r.dimen.spacingMedium
+              )
+            }
           }
         }
-      }
-      .background(
-        r.color.surface,
-        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-      )
-      .overlay {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-          .stroke(r.color.textSecondary.opacity(0.18), lineWidth: 1)
       }
 
       addBusStopButton
@@ -139,37 +149,30 @@ struct EditBoardingPointView: View {
   }
 
   private func busStopRow(_ busStop: BusStop) -> some View {
-    HStack(spacing: 4) {
+    HStack(spacing: r.dimen.spacingXXSmall) {
       Button {
         store.send(.busStopTapped(busStop.id))
       } label: {
-        HStack(spacing: 12) {
-          VStack(alignment: .leading, spacing: 5) {
+        HStack(spacing: r.dimen.spacingSmall) {
+          VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
             Text(busStop.name)
-              .font(.system(size: 18, weight: .semibold))
+              .font(r.font.rowTitle)
               .foregroundStyle(r.color.textPrimary)
               .lineLimit(2)
               .multilineTextAlignment(.leading)
 
-            if let alias = busStop.alias {
-              Text(alias)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(r.color.textSecondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-            }
-
             Text(verbatim: "정류장 번호 \(busStop.id)")
-              .font(.system(size: 14, weight: .regular))
+              .font(r.font.metadata)
               .foregroundStyle(r.color.textSecondary)
 
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: r.dimen.spacingXSmall) {
               Text("선택 노선")
-                .font(.system(size: 14, weight: .medium))
+                .font(r.font.metadata)
+                .fontWeight(.medium)
                 .foregroundStyle(r.color.brandMint)
 
-              Text(routeNumbers(for: busStop).joined(separator: ", "))
-                .font(.system(size: 14, weight: .regular))
+              Text(routeSummary(for: busStop))
+                .font(r.font.metadata)
                 .foregroundStyle(r.color.textSecondary)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
@@ -191,7 +194,10 @@ struct EditBoardingPointView: View {
       Image(systemName: "line.3.horizontal")
         .font(.system(size: 18, weight: .semibold))
         .foregroundStyle(r.color.textSecondary)
-        .frame(width: 44, height: 44)
+        .frame(
+          width: r.dimen.minimumTouchTarget,
+          height: r.dimen.minimumTouchTarget
+        )
         .contentShape(Rectangle())
         .draggable(String(busStop.id))
         .accessibilityLabel("\(busStop.name) 순서 변경")
@@ -207,30 +213,25 @@ struct EditBoardingPointView: View {
       store.send(.busStopMoved(sourceID: sourceID, targetID: busStop.id))
       return true
     }
-    .padding(.leading, 16)
-    .padding(.trailing, 8)
-    .padding(.vertical, 17)
+    .padding(.leading, r.dimen.spacingMedium)
+    .padding(.trailing, r.dimen.spacingXSmall)
+    .padding(.vertical, r.dimen.rowVerticalPadding)
+    .frame(minHeight: r.dimen.richRowMinHeight)
   }
 
   private var addBusStopButton: some View {
-    Button {
-      store.send(.addBusStopButtonTapped)
-    } label: {
-      Label("정류장 추가", systemImage: "plus")
-        .font(.system(size: 17, weight: .medium))
-        .foregroundStyle(r.color.brandMint)
-        .frame(maxWidth: .infinity)
-        .frame(height: 56)
-        .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .background(
-      r.color.surface,
-      in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-    )
-    .overlay {
-      RoundedRectangle(cornerRadius: 14, style: .continuous)
-        .stroke(r.color.textSecondary.opacity(0.18), lineWidth: 1)
+    DashGroupedSurface {
+      Button {
+        store.send(.addBusStopButtonTapped)
+      } label: {
+        Label("정류장 추가", systemImage: "plus")
+          .font(r.font.sectionTitle)
+          .foregroundStyle(r.color.brandMint)
+          .frame(maxWidth: .infinity)
+          .frame(minHeight: r.dimen.primaryButtonHeight)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
     }
     .accessibilityHint("정류장 추가 화면을 엽니다")
   }
@@ -239,10 +240,10 @@ struct EditBoardingPointView: View {
     Button("탑승 지점 삭제", role: .destructive) {
       store.send(.deleteBoardingPointButtonTapped)
     }
-    .font(.system(size: 17, weight: .regular))
+    .font(r.font.body)
     .foregroundStyle(.red)
     .frame(maxWidth: .infinity)
-    .frame(minHeight: 44)
+    .frame(minHeight: r.dimen.minimumTouchTarget)
     .buttonStyle(.plain)
     .accessibilityHint("확인 후 탑승 지점을 삭제합니다")
   }
@@ -272,14 +273,18 @@ struct EditBoardingPointView: View {
       .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
   }
 
+  private func routeSummary(for busStop: BusStop) -> String {
+    let routeNumbers = routeNumbers(for: busStop)
+    return routeNumbers.isEmpty ? "없음" : routeNumbers.joined(separator: ", ")
+  }
+
   private func busStopAccessibilityLabel(_ busStop: BusStop) -> String {
     let components = [
       busStop.name,
-      busStop.alias,
       "정류장 번호 \(busStop.id)",
-      "선택 노선 \(routeNumbers(for: busStop).joined(separator: ", "))",
+      "선택 노선 \(routeSummary(for: busStop))",
     ]
-    return components.compactMap { $0 }.joined(separator: ", ")
+    return components.joined(separator: ", ")
   }
 
   private var trimmedName: String {

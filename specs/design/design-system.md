@@ -54,6 +54,7 @@
 |---|---|---|
 | `screenTitle` | 24pt regular | 내비게이션 화면 제목 |
 | `sectionTitle` | 17pt semibold | 섹션 제목 |
+| `input` | 20pt regular | 단일 행 입력값 |
 | `rowTitle` | 20pt medium | 일반 행 제목 |
 | `selectedRowTitle` | 20pt semibold | 선택 행 제목 |
 | `body` | 16pt regular | 본문과 행 보조 정보 |
