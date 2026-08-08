@@ -186,12 +186,10 @@ struct EditBoardingPointView: View {
       .accessibilityLabel(busStopAccessibilityLabel(busStop))
       .accessibilityHint("버스 노선 선택 화면을 엽니다")
     } trailing: {
-      Menu {
-        Button("정류장 삭제", role: .destructive) {
-          store.send(.busStopDeleteButtonTapped(busStop.id))
-        }
+      Button(role: .destructive) {
+        store.send(.busStopDeleteButtonTapped(busStop.id))
       } label: {
-        Image(systemName: "ellipsis.circle")
+        Image(systemName: "trash")
           .font(r.font.iconMedium)
           .foregroundStyle(r.color.textSecondary)
           .frame(
@@ -199,7 +197,8 @@ struct EditBoardingPointView: View {
             height: r.dimen.minimumTouchTarget
           )
       }
-      .accessibilityLabel("\(busStop.name) 메뉴")
+      .buttonStyle(.plain)
+      .accessibilityLabel("\(busStop.name) 정류장 삭제")
     }
   }
 
@@ -229,6 +228,8 @@ struct EditBoardingPointView: View {
     .frame(maxWidth: .infinity)
     .frame(minHeight: r.dimen.minimumTouchTarget)
     .buttonStyle(.plain)
+    .disabled(!store.canDeleteBoardingPoint)
+    .opacity(store.canDeleteBoardingPoint ? 1 : r.opacity.disabled)
     .accessibilityHint("확인 후 탑승 지점을 삭제합니다")
     .padding(.horizontal, r.dimen.spacingMedium)
   }

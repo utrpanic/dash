@@ -9,12 +9,17 @@ struct EditBoardingPointFeature {
     }
 
     var boardingPoint: BoardingPoint
+    var canDeleteBoardingPoint: Bool
     var name: String
     var routes: [BusStop: Set<BusRoute>]
     var deleteConfirmation: DeleteConfirmation?
 
-    init(boardingPoint: BoardingPoint) {
+    init(
+      boardingPoint: BoardingPoint,
+      canDeleteBoardingPoint: Bool = true
+    ) {
       self.boardingPoint = boardingPoint
+      self.canDeleteBoardingPoint = canDeleteBoardingPoint
       self.name = boardingPoint.name
       self.routes = boardingPoint.routes
       self.deleteConfirmation = nil
@@ -89,6 +94,9 @@ struct EditBoardingPointFeature {
         )
 
       case .deleteBoardingPointButtonTapped:
+        guard state.canDeleteBoardingPoint else {
+          return .none
+        }
         state.deleteConfirmation = .boardingPoint
         return .none
 
@@ -97,7 +105,9 @@ struct EditBoardingPointFeature {
         return .none
 
       case .deleteConfirmationConfirmed:
-        guard state.deleteConfirmation != nil else {
+        guard state.canDeleteBoardingPoint,
+              state.deleteConfirmation != nil
+        else {
           return .none
         }
         state.deleteConfirmation = nil

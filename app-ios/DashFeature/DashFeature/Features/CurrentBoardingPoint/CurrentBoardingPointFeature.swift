@@ -76,6 +76,7 @@ struct CurrentBoardingPointFeature: Sendable {
     case nextBoardingPointButtonTapped
     case refreshButtonTapped
     case boardingPointSelected(BoardingPoint.ID)
+    case boardingPointDeleted(BoardingPoint.ID)
     case boardingPointUpdated(BoardingPoint)
     case setCurrentBoardingPoint(BoardingPoint)
     case task
@@ -254,6 +255,35 @@ struct CurrentBoardingPointFeature: Sendable {
         }
         state.boardingPointSelection = .selected(boardingPointID)
         return .send(.loadUpcomingBuses)
+
+      case let .boardingPointDeleted(boardingPointID):
+        guard state.boardingPoints.count > 1,
+              state.boardingPoints.contains(where: { $0.id == boardingPointID })
+        else {
+          return .none
+        }
+        state.boardingPoints.removeAll { $0.id == boardingPointID }
+        guard state.selectedBoardingPointID == boardingPointID else {
+          return .none
+        }
+
+        state.upcomingBuses = []
+        state.isLoadingUpcomingBuses = false
+        state.upcomingBusesErrorMessage = nil
+        state.lastUpdatedAt = nil
+        state.isRequestingUserLocation = false
+
+        guard !state.boardingPoints.isEmpty else {
+          state.boardingPointSelection = .locationUnavailable
+          return .cancel(id: CancelID.loadUpcomingBuses)
+        }
+
+        state.boardingPointSelection = .locating
+        state.hasRequestedInitialLocation = false
+        return .concatenate(
+          .cancel(id: CancelID.loadUpcomingBuses),
+          .send(.task)
+        )
 
       case let .boardingPointUpdated(boardingPoint):
         guard let index = state.boardingPoints.firstIndex(where: { $0.id == boardingPoint.id }) else {

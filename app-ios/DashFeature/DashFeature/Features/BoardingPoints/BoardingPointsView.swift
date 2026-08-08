@@ -42,6 +42,28 @@ struct BoardingPointsView: View {
     }
     .toolbarBackground(r.color.background, for: .navigationBar)
     .toolbarBackground(.visible, for: .navigationBar)
+    .alert(
+      "탑승 지점을 삭제할까요?",
+      isPresented: Binding(
+        get: { store.deleteConfirmation != nil },
+        set: { isPresented in
+          if !isPresented {
+            store.send(.deleteConfirmationCancelled)
+          }
+        }
+      )
+    ) {
+      Button("취소", role: .cancel) {
+        store.send(.deleteConfirmationCancelled)
+      }
+      Button("탑승 지점 삭제", role: .destructive) {
+        store.send(.deleteConfirmationConfirmed)
+      }
+    } message: {
+      if let boardingPoint = store.deleteConfirmation {
+        Text("‘\(boardingPoint.name)’ 탑승 지점이 삭제됩니다.")
+      }
+    }
   }
 
   private var boardingPointList: some View {
@@ -58,7 +80,11 @@ struct BoardingPointsView: View {
               },
               edit: {
                 store.send(.editButtonTapped(boardingPoint.id))
-              }
+              },
+              delete: {
+                store.send(.deleteButtonTapped(boardingPoint.id))
+              },
+              canDelete: store.boardingPoints.count > 1
             )
             DashListDivider()
           }
@@ -84,8 +110,26 @@ struct BoardingPointsView: View {
 private struct BoardingPointRowView: View {
   let boardingPoint: BoardingPoint
   let isSelected: Bool
+  let canDelete: Bool
   let select: () -> Void
   let edit: () -> Void
+  let delete: () -> Void
+
+  init(
+    boardingPoint: BoardingPoint,
+    isSelected: Bool,
+    select: @escaping () -> Void,
+    edit: @escaping () -> Void,
+    delete: @escaping () -> Void,
+    canDelete: Bool
+  ) {
+    self.boardingPoint = boardingPoint
+    self.isSelected = isSelected
+    self.select = select
+    self.edit = edit
+    self.delete = delete
+    self.canDelete = canDelete
+  }
 
   var body: some View {
     DashFlatListRow(
@@ -120,17 +164,38 @@ private struct BoardingPointRowView: View {
       )
       .accessibilityHint("현재 탑승 지점으로 선택합니다")
     } trailing: {
-      Button(action: edit) {
-        Image(systemName: "square.and.pencil")
-          .font(.title3.weight(.regular))
-          .foregroundStyle(r.color.textSecondary)
-          .frame(
-            width: r.dimen.minimumTouchTarget,
-            height: r.dimen.minimumTouchTarget
-          )
+      HStack(spacing: 0) {
+        Button(action: edit) {
+          Image(systemName: "square.and.pencil")
+            .font(.title3.weight(.regular))
+            .foregroundStyle(r.color.textSecondary)
+            .frame(
+              width: r.dimen.minimumTouchTarget,
+              height: r.dimen.minimumTouchTarget
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(boardingPoint.name) 편집")
+
+        Button(role: .destructive, action: delete) {
+          Image(systemName: "trash")
+            .font(.title3.weight(.regular))
+            .foregroundStyle(r.color.textSecondary)
+            .frame(
+              width: r.dimen.minimumTouchTarget,
+              height: r.dimen.minimumTouchTarget
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!canDelete)
+        .opacity(canDelete ? 1 : r.opacity.disabled)
+        .accessibilityLabel("\(boardingPoint.name) 삭제")
+        .accessibilityHint(
+          canDelete
+            ? "확인 후 탑승 지점을 삭제합니다"
+            : "마지막 탑승 지점은 삭제할 수 없습니다"
+        )
       }
-      .buttonStyle(.plain)
-      .accessibilityLabel("\(boardingPoint.name) 편집")
     }
   }
 

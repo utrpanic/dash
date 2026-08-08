@@ -53,7 +53,8 @@ struct DashFeature {
           state.path.append(
             .editBoardingPoint(
               EditBoardingPointFeature.State(
-                boardingPoint: boardingPoint
+                boardingPoint: boardingPoint,
+                canDeleteBoardingPoint: state.currentBoardingPoint.boardingPoints.count > 1
               )
             )
           )
@@ -74,7 +75,8 @@ struct DashFeature {
         state.path.append(
           .editBoardingPoint(
             EditBoardingPointFeature.State(
-              boardingPoint: boardingPoint
+              boardingPoint: boardingPoint,
+              canDeleteBoardingPoint: state.currentBoardingPoint.boardingPoints.count > 1
             )
           )
         )
@@ -161,6 +163,18 @@ struct DashFeature {
         .element(
           id: _,
           action: .boardingPoints(
+            .delegate(.boardingPointDeleted(boardingPointID))
+          )
+        )
+      ):
+        return .send(
+          .currentBoardingPoint(.boardingPointDeleted(boardingPointID))
+        )
+
+      case let .path(
+        .element(
+          id: _,
+          action: .boardingPoints(
             .delegate(.boardingPointSelected(boardingPoint))
           )
         )
@@ -172,6 +186,33 @@ struct DashFeature {
           )
         )
         
+      case let .path(
+        .element(
+          id: _,
+          action: .editBoardingPoint(
+            .delegate(.deleteCompleted(boardingPointID))
+          )
+        )
+      ):
+        state.path.removeLast()
+        let currentBoardingPointEffect: Effect<Action> = .send(
+          .currentBoardingPoint(.boardingPointDeleted(boardingPointID))
+        )
+        guard let boardingPointsID = state.path.ids.last else {
+          return currentBoardingPointEffect
+        }
+        return .merge(
+          currentBoardingPointEffect,
+          .send(
+            .path(
+              .element(
+                id: boardingPointsID,
+                action: .boardingPoints(.boardingPointDeleted(boardingPointID))
+              )
+            )
+          )
+        )
+
       case let .path(
         .element(
           id: _,
