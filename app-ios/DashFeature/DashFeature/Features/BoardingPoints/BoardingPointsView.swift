@@ -46,7 +46,7 @@ struct BoardingPointsView: View {
 
   private var boardingPointList: some View {
     VStack(spacing: 0) {
-      DashListDivider.list
+      DashListDivider()
       ScrollView {
         LazyVStack(spacing: 0) {
           ForEach(store.boardingPoints) { boardingPoint in
@@ -60,7 +60,7 @@ struct BoardingPointsView: View {
                 store.send(.editButtonTapped(boardingPoint.id))
               }
             )
-            DashListDivider.list
+            DashListDivider()
           }
         }
       }

@@ -28,21 +28,9 @@ struct DashPrimaryButtonStyle: ButtonStyle {
 }
 
 struct DashListDivider: View {
-  var leadingInset: CGFloat = 0
-  var trailingInset: CGFloat = 0
-
   var body: some View {
     Divider()
       .overlay(r.color.textSecondary.opacity(r.opacity.divider))
-      .padding(.leading, leadingInset)
-      .padding(.trailing, trailingInset)
-  }
-
-  static var list: DashListDivider {
-    DashListDivider(
-      leadingInset: r.dimen.spacingMedium,
-      trailingInset: r.dimen.spacingMedium
-    )
   }
 }
 

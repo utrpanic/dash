@@ -106,10 +106,10 @@
 ### Flat list row
 
 - 외부 rounded container를 사용하지 않는다.
-- 목록은 화면 폭을 사용한다. 행 콘텐츠와 행 사이 Divider만 좌우 `16pt` inset을 사용한다.
+- 목록은 화면 폭을 사용한다. 행 콘텐츠만 좌우 `16pt` inset을 사용한다.
 - 행 콘텐츠는 상하 `14pt` padding을 사용한다.
 - 콘텐츠에 따라 compact, standard, rich 최소 높이를 선택한다.
-- 행 사이 Divider는 목록의 16pt 콘텐츠 영역 안에 둔다.
+- 행 사이 Divider는 목록 전체 폭을 사용한다.
 - 행 전체 탭과 trailing 보조 액션은 독립적인 44pt 이상 터치 영역을 가진다.
 
 ### Grouped surface
@@ -151,7 +151,7 @@
 - 왼쪽 전체 높이 `4pt` brand rail
 - 제목을 `selectedRowTitle`로 강조
 - 접근성 레이블에 선택 상태 포함
-- rail은 목록의 실제 leading edge에 붙고, 텍스트와 Divider만 `16pt` inset을 사용한다.
+- rail은 목록의 실제 leading edge에 붙고, 텍스트만 `16pt` inset을 사용한다.
 
 탑승 지점 목록의 현재 지점과 정류장 추가 화면의 임시 선택은 같은 단일 선택 컴포넌트를 사용한다.
 
@@ -197,7 +197,7 @@
 ### FlatEntityList
 
 - navigation title과 add action
-- flat list row와 inset Divider
+- flat list row와 full-width Divider
 - 필요할 때 single selection
 - trailing 보조 action
 - empty 상태

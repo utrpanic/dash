@@ -11,7 +11,6 @@ struct SelectBusRoutesView: View {
 
       VStack(spacing: 0) {
         DashListDivider()
-          .padding(.horizontal, r.dimen.spacingMedium)
 
         ScrollView {
           VStack(alignment: .leading, spacing: r.dimen.spacingLarge) {

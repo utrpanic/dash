@@ -12,7 +12,6 @@ struct EditBoardingPointView: View {
 
       VStack(spacing: 0) {
         DashListDivider()
-          .padding(.horizontal, r.dimen.spacingMedium)
 
         GeometryReader { proxy in
           ScrollView {
@@ -132,13 +131,13 @@ struct EditBoardingPointView: View {
       .padding(.horizontal, r.dimen.spacingMedium)
 
       VStack(spacing: 0) {
-        DashListDivider.list
+        DashListDivider()
         ForEach(busStops) { busStop in
           busStopRow(busStop)
-          DashListDivider.list
+          DashListDivider()
         }
         addBusStopButton
-        DashListDivider.list
+        DashListDivider()
       }
       .frame(maxWidth: .infinity)
     }
