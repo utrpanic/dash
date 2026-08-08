@@ -27,6 +27,7 @@ struct EditBoardingPointFeature {
     case addBusStopButtonTapped
     case busStopAdded(BusStop)
     case busStopMoved(sourceID: BusStop.ID, targetID: BusStop.ID)
+    case busStopRoutesChanged(busStopID: BusStop.ID, routes: Set<BusRoute>)
     case busStopTapped(BusStop.ID)
     case deleteBoardingPointButtonTapped
     case deleteConfirmationCancelled
@@ -73,6 +74,13 @@ struct EditBoardingPointFeature {
         state.busStopOrder.remove(at: sourceIndex)
         let insertionIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
         state.busStopOrder.insert(sourceID, at: insertionIndex)
+        return .none
+
+      case let .busStopRoutesChanged(busStopID, routes):
+        guard let busStop = state.routes.keys.first(where: { $0.id == busStopID }) else {
+          return .none
+        }
+        state.routes[busStop] = routes
         return .none
 
       case let .busStopTapped(busStopID):

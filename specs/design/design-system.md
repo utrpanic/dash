@@ -57,6 +57,7 @@
 | `input` | 20pt regular | 단일 행 입력값 |
 | `rowTitle` | 20pt medium | 일반 행 제목 |
 | `selectedRowTitle` | 20pt semibold | 선택 행 제목 |
+| `routeNumber` | 32pt semibold | 노선 선택 행의 노선 번호 |
 | `body` | 16pt regular | 본문과 행 보조 정보 |
 | `metadata` | 14pt regular | 식별자와 부가 정보 |
 | `navigationAction` | 17pt semibold | 저장·완료 같은 텍스트 액션 |

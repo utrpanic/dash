@@ -78,6 +78,60 @@ struct DashFlatListRow<Content: View, Trailing: View>: View {
   }
 }
 
+struct DashMultiSelectRow<Content: View>: View {
+  let isSelected: Bool
+  let minHeight: CGFloat
+  private let content: Content
+
+  init(
+    isSelected: Bool,
+    minHeight: CGFloat = r.dimen.standardRowMinHeight,
+    @ViewBuilder content: () -> Content
+  ) {
+    self.isSelected = isSelected
+    self.minHeight = minHeight
+    self.content = content()
+  }
+
+  var body: some View {
+    HStack(spacing: r.dimen.spacingSmall) {
+      content
+
+      ZStack {
+        Circle()
+          .fill(isSelected ? r.color.brandMint : .clear)
+        Circle()
+          .stroke(
+            isSelected ? r.color.brandMint : r.color.textSecondary,
+            lineWidth: r.dimen.selectionIndicatorBorderWidth
+          )
+        if isSelected {
+          Image(systemName: "checkmark")
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.white)
+        }
+      }
+      .frame(
+        width: r.dimen.selectionIndicatorSize,
+        height: r.dimen.selectionIndicatorSize
+      )
+      .frame(
+        width: r.dimen.minimumTouchTarget,
+        height: r.dimen.minimumTouchTarget
+      )
+      .accessibilityHidden(true)
+    }
+    .padding(.horizontal, r.dimen.spacingMedium)
+    .padding(.vertical, r.dimen.rowVerticalPadding)
+    .frame(minHeight: minHeight)
+    .background {
+      if isSelected {
+        r.color.brandMint.opacity(r.opacity.selectionBackground)
+      }
+    }
+  }
+}
+
 struct DashGroupedSurface<Content: View>: View {
   private let content: Content
 

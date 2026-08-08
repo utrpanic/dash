@@ -22,6 +22,7 @@ struct DashFeature {
     case boardingPoints(BoardingPointsFeature)
     case editBoardingPoint(EditBoardingPointFeature)
     case addBusStop(AddBusStopFeature)
+    case busRouteSelection(BusRouteSelectionFeature)
   }
 
   init() {}
@@ -97,6 +98,24 @@ struct DashFeature {
       case let .path(
         .element(
           id: _,
+          action: .editBoardingPoint(
+            .delegate(.busRouteSelectionRequested(boardingPoint, busStop))
+          )
+        )
+      ):
+        state.path.append(
+          .busRouteSelection(
+            BusRouteSelectionFeature.State(
+              boardingPoint: boardingPoint,
+              busStop: busStop
+            )
+          )
+        )
+        return .none
+
+      case let .path(
+        .element(
+          id: _,
           action: .addBusStop(
             .delegate(.busStopSelected(busStop))
           )
@@ -111,6 +130,29 @@ struct DashFeature {
             .element(
               id: editID,
               action: .editBoardingPoint(.busStopAdded(busStop))
+            )
+          )
+        )
+
+      case let .path(
+        .element(
+          id: _,
+          action: .busRouteSelection(
+            .delegate(.selectionCompleted(busStop, routes))
+          )
+        )
+      ):
+        state.path.removeLast()
+        guard let editID = state.path.ids.last else {
+          return .none
+        }
+        return .send(
+          .path(
+            .element(
+              id: editID,
+              action: .editBoardingPoint(
+                .busStopRoutesChanged(busStopID: busStop.id, routes: routes)
+              )
             )
           )
         )
