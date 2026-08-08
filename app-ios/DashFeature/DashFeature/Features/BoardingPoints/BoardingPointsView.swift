@@ -20,7 +20,7 @@ struct BoardingPointsView: View {
     .toolbar {
       ToolbarItem(placement: .principal) {
         Text("탑승 지점")
-          .font(.system(size: 24, weight: .regular))
+          .font(r.font.screenTitle)
           .foregroundStyle(r.color.textPrimary)
       }
       ToolbarItem(placement: .topBarTrailing) {
@@ -28,9 +28,12 @@ struct BoardingPointsView: View {
           store.send(.addButtonTapped)
         } label: {
           Image(systemName: "plus")
-            .font(.system(size: 22, weight: .regular))
+            .font(.title3.weight(.regular))
             .foregroundStyle(r.color.brandMint)
-            .frame(width: 44, height: 44)
+            .frame(
+              width: r.dimen.minimumTouchTarget,
+              height: r.dimen.minimumTouchTarget
+            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("탑승 지점 추가")
@@ -43,8 +46,7 @@ struct BoardingPointsView: View {
 
   private var boardingPointList: some View {
     VStack(spacing: 0) {
-      Divider()
-        .background(r.color.textSecondary.opacity(0.25))
+      DashListDivider()
       ScrollView {
         LazyVStack(spacing: 0) {
           ForEach(store.boardingPoints) { boardingPoint in
@@ -58,14 +60,13 @@ struct BoardingPointsView: View {
                 store.send(.editButtonTapped(boardingPoint.id))
               }
             )
-            Divider()
-              .background(r.color.textSecondary.opacity(0.25))
+            DashListDivider()
           }
         }
       }
       .scrollIndicators(.hidden)
     }
-    .padding(.horizontal, 16)
+    .padding(.horizontal, r.dimen.spacingMedium)
   }
 
   private var emptyState: some View {
@@ -88,16 +89,23 @@ private struct BoardingPointRowView: View {
   let edit: () -> Void
 
   var body: some View {
-    HStack(spacing: 8) {
+    DashFlatListRow(
+      isSelected: isSelected,
+      minHeight: r.dimen.richRowMinHeight
+    ) {
       Button(action: select) {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
           Text(boardingPoint.name)
-            .font(.system(size: 20, weight: isSelected ? .semibold : .medium))
+            .font(
+              isSelected
+                ? r.font.selectedRowTitle
+                : r.font.rowTitle
+            )
             .foregroundStyle(r.color.textPrimary)
-            .lineLimit(1)
+            .lineLimit(2)
 
           Text("\(routeNumbers.count)개 노선 · \(routeNumbers.joined(separator: ", "))")
-            .font(.system(size: 16, weight: .regular))
+            .font(r.font.body)
             .foregroundStyle(r.color.textSecondary)
             .lineLimit(2)
             .multilineTextAlignment(.leading)
@@ -112,27 +120,18 @@ private struct BoardingPointRowView: View {
           : boardingPoint.name
       )
       .accessibilityHint("현재 탑승 지점으로 선택합니다")
-
+    } trailing: {
       Button(action: edit) {
         Image(systemName: "square.and.pencil")
-          .font(.system(size: 20, weight: .regular))
+          .font(.title3.weight(.regular))
           .foregroundStyle(r.color.textSecondary)
-          .frame(width: 44, height: 44)
+          .frame(
+            width: r.dimen.minimumTouchTarget,
+            height: r.dimen.minimumTouchTarget
+          )
       }
       .buttonStyle(.plain)
       .accessibilityLabel("\(boardingPoint.name) 편집")
-    }
-    .frame(height: 86)
-    .padding(.horizontal, 16)
-    .background {
-      if isSelected {
-        ZStack(alignment: .leading) {
-          r.color.brandMint.opacity(0.08)
-          Rectangle()
-            .fill(r.color.brandMint)
-            .frame(width: 4)
-        }
-      }
     }
   }
 
