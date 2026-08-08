@@ -25,6 +25,7 @@ struct EditBoardingPointFeature {
   
   enum Action: Equatable {
     case addBusStopButtonTapped
+    case busStopAdded(BusStop)
     case busStopMoved(sourceID: BusStop.ID, targetID: BusStop.ID)
     case busStopTapped(BusStop.ID)
     case deleteBoardingPointButtonTapped
@@ -53,6 +54,14 @@ struct EditBoardingPointFeature {
             .addBusStopRequested(updatedBoardingPoint(from: state))
           )
         )
+
+      case let .busStopAdded(busStop):
+        guard !state.routes.keys.contains(busStop) else {
+          return .none
+        }
+        state.routes[busStop] = []
+        state.busStopOrder.append(busStop.id)
+        return .none
 
       case let .busStopMoved(sourceID, targetID):
         guard sourceID != targetID,

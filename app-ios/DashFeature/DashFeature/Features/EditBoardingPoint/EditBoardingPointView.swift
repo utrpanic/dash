@@ -159,7 +159,7 @@ struct EditBoardingPointView: View {
                 .multilineTextAlignment(.leading)
             }
 
-            Text("정류장 \(busStop.id)")
+            Text(verbatim: "정류장 번호 \(busStop.id)")
               .font(.system(size: 14, weight: .regular))
               .foregroundStyle(r.color.textSecondary)
 

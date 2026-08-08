@@ -18,7 +18,6 @@ public struct BoardingPoint: Equatable, Hashable, Identifiable, Sendable {
     routes: [BusStop: Set<BusRoute>],
     busStopOrder: [BusStop.ID]? = nil
   ) {
-    precondition(!routes.isEmpty, "BoardingPoint requires at least one bus stop.")
     self.id = id
     self.name = name
     self.routes = routes

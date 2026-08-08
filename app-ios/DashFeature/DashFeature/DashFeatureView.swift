@@ -24,6 +24,8 @@ public struct DashFeatureView: View {
         BoardingPointsView(store: store)
       case let .editBoardingPoint(store):
         EditBoardingPointView(store: store)
+      case let .addBusStop(store):
+        AddBusStopView(store: store)
       }
     }
   }

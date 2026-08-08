@@ -21,6 +21,7 @@ struct DashFeature {
   enum Path {
     case boardingPoints(BoardingPointsFeature)
     case editBoardingPoint(EditBoardingPointFeature)
+    case addBusStop(AddBusStopFeature)
   }
 
   init() {}
@@ -62,7 +63,7 @@ struct DashFeature {
         return .none
       
       case let .path(
-        .element(
+          .element(
           id: _,
           action: .boardingPoints(
             .delegate(.editBoardingPointRequested(boardingPoint))
@@ -77,6 +78,42 @@ struct DashFeature {
           )
         )
         return .none
+
+      case let .path(
+        .element(
+          id: _,
+          action: .editBoardingPoint(
+            .delegate(.addBusStopRequested(boardingPoint))
+          )
+        )
+      ):
+        state.path.append(
+          .addBusStop(
+            AddBusStopFeature.State(boardingPoint: boardingPoint)
+          )
+        )
+        return .none
+
+      case let .path(
+        .element(
+          id: _,
+          action: .addBusStop(
+            .delegate(.busStopSelected(busStop))
+          )
+        )
+      ):
+        state.path.removeLast()
+        guard let editID = state.path.ids.last else {
+          return .none
+        }
+        return .send(
+          .path(
+            .element(
+              id: editID,
+              action: .editBoardingPoint(.busStopAdded(busStop))
+            )
+          )
+        )
         
       case let .path(
         .element(

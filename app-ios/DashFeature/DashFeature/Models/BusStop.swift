@@ -22,6 +22,14 @@ public struct BusStop: Equatable, Hashable, Identifiable, Sendable {
 }
 
 public extension BusStop {
+  static let allKnown: [BusStop] = [
+    .suwonStationExit7Inner,
+    .suwonStationExit7Outer,
+    .homaesilSsangyongApartment,
+    .yeongdeungpoStation,
+    .theHyundaiSeoul,
+  ]
+
   static let suwonStationExit7Inner = BusStop(
     id: 202000106,
     name: "수원역7번출구.AK플라자",
