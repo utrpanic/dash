@@ -5,7 +5,6 @@ struct SeoulBusArrivalDTO: Equatable, Sendable {
   let routeId: Int
   let routeNumber: String
   let stationOrder: Int
-  let destinationName: String
   let isDetouring: Bool
   let firstPrediction: PredictionDTO?
   let secondPrediction: PredictionDTO?
@@ -15,11 +14,10 @@ struct SeoulBusArrivalDTO: Equatable, Sendable {
     stationId = try fields.requiredInt("stId")
     routeId = try fields.requiredInt("busRouteId")
     routeNumber = {
-      let routeName = fields.string("rtNm")
-      return routeName.isEmpty ? fields.string("busRouteAbrv") : routeName
+      let routeAbbreviation = fields.string("busRouteAbrv")
+      return routeAbbreviation.isEmpty ? fields.string("rtNm") : routeAbbreviation
     }()
     stationOrder = try fields.requiredInt("staOrd")
-    destinationName = fields.string("dir")
     isDetouring = fields.string("deTourAt") == "11"
     firstPrediction = PredictionDTO(index: 1, fields: fields)
     secondPrediction = PredictionDTO(index: 2, fields: fields)
@@ -28,9 +26,8 @@ struct SeoulBusArrivalDTO: Equatable, Sendable {
   func toDomain() -> BusArrival {
     BusArrival(
       stationId: stationId,
-      route: BusRoute(id: routeId, number: routeNumber, region: .seoul),
+      route: BusRoute(id: routeId, number: routeNumber),
       stationOrder: stationOrder,
-      destinationName: destinationName,
       operationState: isDetouring ? "우회" : "",
       firstPrediction: firstPrediction?.toDomain(),
       secondPrediction: secondPrediction?.toDomain()

@@ -43,7 +43,7 @@ extension BusRouteAPIClient: DependencyKey {
   public static let testValue = Self(
     fetchRouteInfo: { _ in
       BusRouteInfo(
-        route: BusRoute(id: 0, number: "", region: .gyeonggi),
+        route: BusRoute(id: 0, number: ""),
         routeTypeName: "",
         regionName: "",
         companyName: "",

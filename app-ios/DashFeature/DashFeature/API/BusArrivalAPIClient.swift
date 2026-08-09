@@ -48,9 +48,8 @@ extension BusArrivalAPIClient: DependencyKey {
     fetchArrival: { _, _, _ in
       BusArrival(
         stationId: 0,
-        route: BusRoute(id: 0, number: "", region: .gyeonggi),
+        route: BusRoute(id: 0, number: ""),
         stationOrder: 0,
-        destinationName: "",
         operationState: "",
         firstPrediction: nil,
         secondPrediction: nil

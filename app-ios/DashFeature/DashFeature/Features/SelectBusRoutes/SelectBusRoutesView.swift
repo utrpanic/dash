@@ -49,6 +49,9 @@ struct SelectBusRoutesView: View {
     }
     .toolbarBackground(r.color.background, for: .navigationBar)
     .toolbarBackground(.visible, for: .navigationBar)
+    .task {
+      store.send(.task)
+    }
   }
 
   private var busStopSummary: some View {
@@ -70,7 +73,7 @@ struct SelectBusRoutesView: View {
         .opacity(store.routeOptions.isEmpty ? r.opacity.disabled : 1)
       }
 
-      Text(verbatim: "정류장 번호 \(store.busStop.id)")
+      Text(verbatim: "정류장 번호 \(store.busStop.id.stationID)")
         .font(r.font.metadata)
         .foregroundStyle(r.color.textSecondary)
     }
@@ -79,47 +82,70 @@ struct SelectBusRoutesView: View {
 
   @ViewBuilder
   private var routesSection: some View {
-    if store.routeOptions.isEmpty {
+    if store.isLoadingRoutes {
+      ProgressView()
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, r.dimen.spacingXLarge)
+    } else if let routeLoadErrorMessage = store.routeLoadErrorMessage {
+      routeLoadErrorState(routeLoadErrorMessage)
+    } else if store.routeOptions.isEmpty {
       emptyRoutesState
     } else {
       routeList
     }
   }
 
+  private func routeLoadErrorState(_ message: String) -> some View {
+    VStack(spacing: r.dimen.spacingMedium) {
+      Text("노선 정보를 불러오지 못했습니다.")
+        .font(r.font.body)
+        .foregroundStyle(r.color.textSecondary)
+      Text(message)
+        .font(r.font.metadata)
+        .foregroundStyle(r.color.textSecondary)
+        .multilineTextAlignment(.center)
+      Button("다시 시도") {
+        store.send(.task)
+      }
+      .font(r.font.navigationAction)
+      .foregroundStyle(r.color.brandMint)
+      .buttonStyle(.plain)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.horizontal, r.dimen.spacingMedium)
+    .padding(.vertical, r.dimen.spacingXLarge)
+  }
+
   private var routeList: some View {
     LazyVStack(spacing: r.dimen.spacingSmall) {
-      ForEach(store.routeOptions) { option in
-        routeRow(option)
+      ForEach(store.routeOptions) { route in
+        routeRow(route)
       }
     }
     .padding(.horizontal, r.dimen.spacingMedium)
   }
 
   private func routeRow(
-    _ option: SelectBusRoutesFeature.State.RouteOption
+    _ route: BusRoute
   ) -> some View {
-    let isSelected = store.selectedRouteIDs.contains(option.id)
+    let isSelected = store.selectedRouteIDs.contains(route.id)
 
     return Button {
-      store.send(.routeTapped(option.id))
+      store.send(.routeTapped(route.id))
     } label: {
       DashSelectableCard(
         isSelected: isSelected,
         minHeight: r.dimen.richRowMinHeight
       ) {
-        HStack(spacing: r.dimen.spacingMedium) {
-          Text(option.route.number)
-            .font(r.font.routeNumber)
-            .foregroundStyle(r.color.textPrimary)
-            .frame(minWidth: r.dimen.standardRowMinHeight, alignment: .leading)
-
-          routeDetails(option)
-        }
+        Text(route.number)
+          .font(r.font.routeNumber)
+          .foregroundStyle(r.color.textPrimary)
+          .frame(maxWidth: .infinity, alignment: .leading)
       }
     }
     .buttonStyle(.plain)
     .accessibilityLabel(
-      "\(option.route.number), \(routeDescription(option)), \(isSelected ? "선택됨" : "선택 안 됨")"
+      "\(route.number), \(isSelected ? "선택됨" : "선택 안 됨")"
     )
     .accessibilityHint("이 노선의 선택 상태를 변경합니다")
   }
@@ -143,57 +169,6 @@ struct SelectBusRoutesView: View {
       .background(r.color.background)
   }
 
-  @ViewBuilder
-  private func routeDetails(
-    _ option: SelectBusRoutesFeature.State.RouteOption
-  ) -> some View {
-    VStack(alignment: .leading, spacing: r.dimen.spacingXXSmall) {
-      Text(
-        option.directionName.isEmpty
-          ? routeRegion(option.route)
-          : directionText(option.directionName)
-      )
-      .font(r.font.body)
-      .foregroundStyle(
-        option.directionName.isEmpty ? r.color.textSecondary : r.color.textPrimary
-      )
-
-      if !option.nextStopName.isEmpty {
-        Text("다음: \(option.nextStopName)")
-          .font(r.font.body)
-          .foregroundStyle(r.color.textSecondary)
-      }
-    }
-    .multilineTextAlignment(.leading)
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private func routeDescription(
-    _ option: SelectBusRoutesFeature.State.RouteOption
-  ) -> String {
-    var components = [
-      option.directionName.isEmpty
-        ? routeRegion(option.route)
-        : directionText(option.directionName)
-    ]
-    if !option.nextStopName.isEmpty {
-      components.append("다음 \(option.nextStopName)")
-    }
-    return components.joined(separator: ", ")
-  }
-
-  private func directionText(_ directionName: String) -> String {
-    directionName.hasSuffix("방면") ? directionName : "\(directionName) 방면"
-  }
-
-  private func routeRegion(_ route: BusRoute) -> String {
-    switch route.region {
-    case .gyeonggi:
-      return "경기 버스"
-    case .seoul:
-      return "서울 버스"
-    }
-  }
 }
 
 #Preview {
@@ -206,6 +181,8 @@ struct SelectBusRoutesView: View {
         )
       ) {
         SelectBusRoutesFeature()
+      } withDependencies: {
+        $0.busStationAPIClient = .testValue
       }
     )
   }

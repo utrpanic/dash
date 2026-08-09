@@ -34,7 +34,7 @@ public struct BusRouteDTO: Decodable, Equatable, Sendable {
   public let routeName: LossyStringDTO
 
   func toDomain() -> BusRoute {
-    BusRoute(id: routeId, number: routeName.value, region: .gyeonggi)
+    BusRoute(id: routeId, number: routeName.value)
   }
 }
 
@@ -73,7 +73,7 @@ public struct BusRouteInfoDTO: Decodable, Equatable, Sendable {
 
   func toDomain() -> BusRouteInfo {
     BusRouteInfo(
-      route: BusRoute(id: routeId, number: routeName.value, region: .gyeonggi),
+      route: BusRoute(id: routeId, number: routeName.value),
       routeTypeName: routeTypeName ?? "",
       regionName: regionName ?? "",
       companyName: companyName ?? "",

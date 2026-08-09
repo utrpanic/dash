@@ -2,7 +2,7 @@ import Foundation
 
 public struct UpcomingBus: Equatable, Hashable, Identifiable, Sendable {
   public var id: String {
-    "\(boardingPoint.id)-\(busStop.id)-\(busRoute.id)-\(timeIntervalUntilArrival)"
+    "\(boardingPoint.id)-\(busStop.id.storageKey)-\(busRoute.id)-\(timeIntervalUntilArrival)"
   }
 
   public let boardingPoint: BoardingPoint

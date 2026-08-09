@@ -31,13 +31,13 @@ import Testing
 
 @Test func fetchKnownSuwonRouteConstantsThroughFeature() async throws {
   let routes: [BusRoute] = [
-    .gyeonggi_9,
-    .gyeonggi_9_1,
-    .gyeonggi_13,
-    .gyeonggi_13_1,
-    .gyeonggi_13_4,
-    .gyeonggi_13_5,
-    .gyeonggi_15_1,
+    .route9,
+    .route9_1,
+    .route13,
+    .route13_1,
+    .route13_4,
+    .route13_5,
+    .route15_1,
   ]
 
   for route in routes {
@@ -55,7 +55,7 @@ import Testing
   } withDependencies: {
     $0.busRouteAPIClient.searchRoutes = { _ in
       [
-        BusRoute(id: 234000130, number: "1303", region: .gyeonggi)
+        BusRoute(id: 234000130, number: "1303")
       ]
     }
   }
@@ -68,12 +68,12 @@ import Testing
 
   await store.receive(
     .busRouteSearchResponse(
-      .success([BusRoute(id: 234000130, number: "1303", region: .gyeonggi)])
+      .success([BusRoute(id: 234000130, number: "1303")])
     )
   ) {
     $0.isSearchingBusRoutes = false
     $0.busRouteSearchResults = [
-      BusRoute(id: 234000130, number: "1303", region: .gyeonggi)
+      BusRoute(id: 234000130, number: "1303")
     ]
     $0.busRouteSearchErrorMessage = nil
   }

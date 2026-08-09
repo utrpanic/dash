@@ -8,7 +8,6 @@ public struct BusArrival: Equatable, Hashable, Identifiable, Sendable {
   public let stationId: Int
   public let route: BusRoute
   public let stationOrder: Int
-  public let destinationName: String
   public let operationState: String
   public let firstPrediction: BusArrivalPrediction?
   public let secondPrediction: BusArrivalPrediction?
@@ -17,7 +16,6 @@ public struct BusArrival: Equatable, Hashable, Identifiable, Sendable {
     stationId: Int,
     route: BusRoute,
     stationOrder: Int,
-    destinationName: String,
     operationState: String,
     firstPrediction: BusArrivalPrediction?,
     secondPrediction: BusArrivalPrediction?
@@ -25,7 +23,6 @@ public struct BusArrival: Equatable, Hashable, Identifiable, Sendable {
     self.stationId = stationId
     self.route = route
     self.stationOrder = stationOrder
-    self.destinationName = destinationName
     self.operationState = operationState
     self.firstPrediction = firstPrediction
     self.secondPrediction = secondPrediction

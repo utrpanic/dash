@@ -65,7 +65,6 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
   public let predictTimeSec2: LossyOptionalIntDTO?
   public let remainSeatCnt1: LossyOptionalIntDTO?
   public let remainSeatCnt2: LossyOptionalIntDTO?
-  public let routeDestName: String?
   public let routeId: LossyIntDTO
   public let routeName: LossyStringDTO
   public let staOrder: LossyIntDTO
@@ -80,9 +79,8 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
   func toDomain() -> BusArrival {
     BusArrival(
       stationId: stationId.value,
-      route: BusRoute(id: routeId.value, number: routeName.value, region: .gyeonggi),
+      route: BusRoute(id: routeId.value, number: routeName.value),
       stationOrder: staOrder.value,
-      destinationName: routeDestName ?? "",
       operationState: flag ?? "",
       firstPrediction: prediction(
         minutes: predictTime1?.value,

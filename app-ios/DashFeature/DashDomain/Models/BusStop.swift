@@ -1,14 +1,35 @@
 import Foundation
 
 public struct BusStop: Equatable, Hashable, Identifiable, Sendable {
-  public let id: Int
+  public enum ID: Equatable, Hashable, Sendable {
+    case gyeonggi(stationID: Int)
+    case seoul(stationID: Int, arsID: String)
+
+    public var stationID: Int {
+      switch self {
+      case let .gyeonggi(stationID), let .seoul(stationID, _):
+        stationID
+      }
+    }
+
+    public var storageKey: String {
+      switch self {
+      case let .gyeonggi(stationID):
+        "gyeonggi-\(stationID)"
+      case let .seoul(stationID, arsID):
+        "seoul-\(stationID)-\(arsID)"
+      }
+    }
+  }
+
+  public let id: ID
   public let name: String
   public let alias: String?
   public let latitude: Double
   public let longitude: Double
 
   public init(
-    id: Int,
+    id: ID,
     name: String,
     alias: String? = nil,
     latitude: Double,
@@ -33,35 +54,35 @@ public extension BusStop {
   ]
 
   static let suwonStationExit7Inner = BusStop(
-    id: 202000106,
+    id: .gyeonggi(stationID: 202000106),
     name: "수원역7번출구.AK플라자",
     alias: "Inner Platform",
     latitude: 37.2674167,
     longitude: 127.0009
   )
   static let suwonStationExit7Outer = BusStop(
-    id: 202000219,
+    id: .gyeonggi(stationID: 202000219),
     name: "수원역7번출구.AK플라자",
     alias: "Outer Platform",
     latitude: 37.2674667,
     longitude: 127.0009167
   )
   static let homaesilSsangyongApartment = BusStop(
-    id: 201000096,
+    id: .gyeonggi(stationID: 201000096),
     name: "호매실쌍용아파트",
     alias: nil,
     latitude: 37.2678,
     longitude: 126.9513167
   )
   static let yeongdeungpoStation = BusStop(
-    id: 118000005,
+    id: .seoul(stationID: 118000005, arsID: "19005"),
     name: "영등포역",
     alias: nil,
     latitude: 37.5158657465,
     longitude: 126.90509208
   )
   static let theHyundaiSeoul = BusStop(
-    id: 118000197,
+    id: .seoul(stationID: 118000197, arsID: "19282"),
     name: "더현대서울",
     alias: nil,
     latitude: 37.5250045778,

@@ -460,21 +460,20 @@ private extension CurrentBoardingPointFeature {
     var upcomingBuses: [UpcomingBus] = []
 
     for (busStop, busRoutes) in boardingPoint.routes {
-      let gyeonggiBusRoutes = busRoutes.filter { $0.region == .gyeonggi }
-      let seoulBusRoutes = busRoutes.filter { $0.region == .seoul }
-      var matchingArrivals: [BusArrival] = []
+      let matchingArrivals: [BusArrival]
+      switch busStop.id {
+      case let .gyeonggi(stationID):
+        let busRouteIDs = Set(busRoutes.map(\.id))
+        let arrivals = try await busArrivalAPIClient.fetchArrivals(stationID)
+        matchingArrivals = arrivals.filter { busRouteIDs.contains($0.route.id) }
 
-      if !gyeonggiBusRoutes.isEmpty {
-        let busRouteIDs = Set(gyeonggiBusRoutes.map(\.id))
-        let arrivals = try await busArrivalAPIClient.fetchArrivals(busStop.id)
-        matchingArrivals.append(
-          contentsOf: arrivals.filter { busRouteIDs.contains($0.route.id) }
-        )
-      }
-
-      for busRoute in seoulBusRoutes {
-        let arrivals = try await seoulBusArrivalAPIClient.fetchArrivalsByRoute(busRoute.id)
-        matchingArrivals.append(contentsOf: arrivals.filter { $0.stationId == busStop.id })
+      case let .seoul(stationID, _):
+        var arrivalsAtStop: [BusArrival] = []
+        for busRoute in busRoutes {
+          let arrivals = try await seoulBusArrivalAPIClient.fetchArrivalsByRoute(busRoute.id)
+          arrivalsAtStop.append(contentsOf: arrivals.filter { $0.stationId == stationID })
+        }
+        matchingArrivals = arrivalsAtStop
       }
 
       for arrival in matchingArrivals {

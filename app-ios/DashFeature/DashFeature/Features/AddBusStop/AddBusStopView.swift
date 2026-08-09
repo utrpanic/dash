@@ -142,7 +142,7 @@ struct AddBusStopView: View {
               .font(isSelected ? r.font.selectedRowTitle : r.font.rowTitle)
               .foregroundStyle(r.color.textPrimary)
               .multilineTextAlignment(.leading)
-            Text(verbatim: "정류장 번호 \(stop.id)")
+            Text(verbatim: "정류장 번호 \(stop.id.stationID)")
               .font(r.font.body)
               .foregroundStyle(r.color.textSecondary)
               .lineLimit(2)
@@ -157,8 +157,8 @@ struct AddBusStopView: View {
     .buttonStyle(.plain)
     .accessibilityLabel(
       isSelected
-        ? "\(stop.name), 정류장 번호 \(stop.id), 선택됨"
-        : "\(stop.name), 정류장 번호 \(stop.id)"
+        ? "\(stop.name), 정류장 번호 \(stop.id.stationID), 선택됨"
+        : "\(stop.name), 정류장 번호 \(stop.id.stationID)"
     )
     .accessibilityHint("이 정류장을 선택합니다")
   }
@@ -184,7 +184,7 @@ struct AddBusStopView: View {
       : store.availableStops.filter {
         $0.name.localizedCaseInsensitiveContains(query)
           || ($0.alias?.localizedCaseInsensitiveContains(query) ?? false)
-          || String($0.id).contains(query)
+          || String($0.id.stationID).contains(query)
       }
     guard let referenceLocation else { return stops }
     return stops.sorted {

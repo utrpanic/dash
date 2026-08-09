@@ -29,9 +29,9 @@ import Testing
 
 @Test func fetchBoardingPointBusArrivalsThroughFeature() async throws {
   let stationIds = [
-    BusStop.suwonStationExit7Outer.id,
-    BusStop.suwonStationExit7Inner.id,
-    BusStop.homaesilSsangyongApartment.id,
+    BusStop.suwonStationExit7Outer.id.stationID,
+    BusStop.suwonStationExit7Inner.id.stationID,
+    BusStop.homaesilSsangyongApartment.id.stationID,
   ]
 
   for stationId in stationIds {

@@ -123,9 +123,8 @@ private extension SeoulBusArrivalAPIClient {
   static func emptyArrival(stationId: Int, routeId: Int, stationOrder: Int) -> BusArrival {
     BusArrival(
       stationId: stationId,
-      route: BusRoute(id: routeId, number: "", region: .seoul),
+      route: BusRoute(id: routeId, number: ""),
       stationOrder: stationOrder,
-      destinationName: "",
       operationState: "",
       firstPrediction: nil,
       secondPrediction: nil

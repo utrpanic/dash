@@ -10,10 +10,10 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
       FetchDescriptor<BoardingPointConfigurationRecord>()
     )
     guard let record = records.first(where: { $0.id == Self.configurationID }) else {
-      return BoardingPointConfiguration(
-        boardingPoints: [],
-        currentBoardingPointID: nil
-      )
+      let configuration = initialConfiguration
+      modelContext.insert(record(from: configuration))
+      try modelContext.save()
+      return configuration
     }
     return configuration(from: record)
   }
@@ -46,7 +46,7 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
       uniqueKeysWithValues: record.stops.map { stop in
         (
           BusStop(
-            id: stop.busStopID,
+            id: busStopID(from: stop),
             name: stop.name,
             alias: stop.alias,
             latitude: stop.latitude,
@@ -59,12 +59,23 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
     return BoardingPoint(id: record.id, name: record.name, routes: routes)
   }
 
-  private func busRoute(from record: SelectedRouteRecord) -> BusRoute {
-    BusRoute(
-      id: record.routeID,
-      number: record.number,
-      region: record.region == "seoul" ? .seoul : .gyeonggi
+  private func busStopID(from record: BoardingPointStopRecord) -> BusStop.ID {
+    BusStop.allKnown.first { $0.id.stationID == record.busStopID }?.id
+      ?? .gyeonggi(stationID: record.busStopID)
+  }
+
+  private var initialConfiguration: BoardingPointConfiguration {
+    BoardingPointConfiguration(
+      boardingPoints: [
+        .yeongdeungpoStation,
+        .theHyundaiSeoul,
+      ],
+      currentBoardingPointID: BoardingPoint.yeongdeungpoStation.id
     )
+  }
+
+  private func busRoute(from record: SelectedRouteRecord) -> BusRoute {
+    BusRoute(id: record.routeID, number: record.number)
   }
 
   private func record(
@@ -86,11 +97,11 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
     sortIndex: Int
   ) -> BoardingPointRecord {
     let stops = boardingPoint.routes.keys
-      .sorted { $0.id < $1.id }
+      .sorted { $0.id.stationID < $1.id.stationID }
       .map { stop in
         BoardingPointStopRecord(
-          id: "\(boardingPoint.id)-\(stop.id)",
-          busStopID: stop.id,
+          id: "\(boardingPoint.id)-\(stop.id.storageKey)",
+          busStopID: stop.id.stationID,
           name: stop.name,
           alias: stop.alias,
           latitude: stop.latitude,
@@ -99,10 +110,17 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
             .sorted { $0.id < $1.id }
             .map { route in
               SelectedRouteRecord(
-                id: "\(boardingPoint.id)-\(stop.id)-\(route.id)",
+                id: "\(boardingPoint.id)-\(stop.id.storageKey)-\(route.id)",
                 routeID: route.id,
                 number: route.number,
-                region: route.region == .seoul ? "seoul" : "gyeonggi"
+                region: {
+                  switch stop.id {
+                  case .gyeonggi:
+                    "gyeonggi"
+                  case .seoul:
+                    "seoul"
+                  }
+                }()
               )
             }
         )

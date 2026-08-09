@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Testing
 @testable import DashFeature
 
-private let seoulArrivalSampleRouteID = BusRoute.seoul_662.id
+private let seoulArrivalSampleRouteID = BusRoute.route662.id
 
 @Test func fetchSeoulBusArrivalsByRouteThroughFeature() async throws {
   let arrivals = try await SeoulBusArrivalAPIClient.liveValue.fetchArrivalsByRoute(

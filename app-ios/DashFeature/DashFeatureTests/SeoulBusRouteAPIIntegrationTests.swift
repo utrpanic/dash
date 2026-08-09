@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Testing
 @testable import DashFeature
 
-private let seoulSampleRoute = BusRoute.seoul_662
+private let seoulSampleRoute = BusRoute.route662
 
 @Test func searchSeoulBusRoutesThroughFeature() async throws {
   let routes = try await SeoulBusRouteAPIClient.liveValue.searchRoutes(seoulSampleRoute.number)

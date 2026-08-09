@@ -7,25 +7,25 @@ extension Array where Element == UpcomingBus {
       UpcomingBus(
         boardingPoint: .suwonStation,
         busStop: .suwonStationExit7Outer,
-        busRoute: .gyeonggi_13,
+        busRoute: .route13,
         timeIntervalUntilArrival: 2 * 60
       ),
       UpcomingBus(
         boardingPoint: .suwonStation,
         busStop: .suwonStationExit7Outer,
-        busRoute: .gyeonggi_13_4,
+        busRoute: .route13_4,
         timeIntervalUntilArrival: 7 * 60
       ),
       UpcomingBus(
         boardingPoint: .suwonStation,
         busStop: .suwonStationExit7Inner,
-        busRoute: .gyeonggi_13_1,
+        busRoute: .route13_1,
         timeIntervalUntilArrival: 12 * 60
       ),
       UpcomingBus(
         boardingPoint: .suwonStation,
         busStop: .suwonStationExit7Inner,
-        busRoute: .gyeonggi_13_5,
+        busRoute: .route13_5,
         timeIntervalUntilArrival: 26 * 60
       ),
     ]

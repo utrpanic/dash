@@ -10,7 +10,7 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   let expectedUpcomingBus = UpcomingBus(
     boardingPoint: .homaesilSsangyongApartment,
     busStop: .homaesilSsangyongApartment,
-    busRoute: .gyeonggi_9,
+    busRoute: .route9,
     timeIntervalUntilArrival: 3 * 60
   )
   let store = TestStore(initialState: DashFeatureState()) {
@@ -18,16 +18,15 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   } withDependencies: {
     $0.date.now = testNow
     $0.busArrivalAPIClient.fetchArrivals = { stationId in
-      guard stationId == BusStop.homaesilSsangyongApartment.id else {
+      guard stationId == BusStop.homaesilSsangyongApartment.id.stationID else {
         return []
       }
 
       return [
         BusArrival(
           stationId: stationId,
-          route: .gyeonggi_9,
+          route: .route9,
           stationOrder: 2,
-          destinationName: "",
           operationState: "",
           firstPrediction: BusArrivalPrediction(
             minutes: 3,
@@ -65,7 +64,7 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   let expectedUpcomingBus = UpcomingBus(
     boardingPoint: .theHyundaiSeoul,
     busStop: .theHyundaiSeoul,
-    busRoute: .seoul_662,
+    busRoute: .route662,
     timeIntervalUntilArrival: 4 * 60
   )
   let store = TestStore(initialState: DashFeatureState()) {
@@ -74,16 +73,15 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     $0.date.now = testNow
     $0.busArrivalAPIClient.fetchArrivals = { _ in [] }
     $0.seoulBusArrivalAPIClient.fetchArrivalsByRoute = { routeId in
-      guard routeId == BusRoute.seoul_662.id else {
+      guard routeId == BusRoute.route662.id else {
         return []
       }
 
       return [
         BusArrival(
-          stationId: BusStop.theHyundaiSeoul.id,
-          route: .seoul_662,
+          stationId: BusStop.theHyundaiSeoul.id.stationID,
+          route: .route662,
           stationOrder: 29,
-          destinationName: "",
           operationState: "",
           firstPrediction: BusArrivalPrediction(
             minutes: 4,
@@ -120,18 +118,18 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   #expect(
     BoardingPoint.yeongdeungpoStation.routes[.yeongdeungpoStation]?.isSuperset(
       of: [
-        .seoul_160,
-        .seoul_600,
-        .seoul_662,
-        .seoul_8671,
+        .route160,
+        .route600,
+        .route662,
+        .route8671,
       ]
     ) == true
   )
   #expect(
     BoardingPoint.theHyundaiSeoul.routes[.theHyundaiSeoul]?.isSuperset(
       of: [
-        .seoul_662,
-        .seoul_6628,
+        .route662,
+        .route6628,
       ]
     ) == true
   )
@@ -303,8 +301,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     id: "test",
     name: "Test",
     routes: [
-      BusStop(id: 1, name: "First", latitude: 37, longitude: 126): [],
-      BusStop(id: 2, name: "Second", latitude: 39, longitude: 128): [],
+      BusStop(id: .gyeonggi(stationID: 1), name: "First", latitude: 37, longitude: 126): [],
+      BusStop(id: .gyeonggi(stationID: 2), name: "Second", latitude: 39, longitude: 128): [],
     ]
   )
 

@@ -157,7 +157,7 @@ struct EditBoardingPointView: View {
               .lineLimit(2)
               .multilineTextAlignment(.leading)
 
-            Text(verbatim: "정류장 번호 \(busStop.id)")
+            Text(verbatim: "정류장 번호 \(busStop.id.stationID)")
               .font(r.font.metadata)
               .foregroundStyle(r.color.textSecondary)
 
@@ -239,7 +239,7 @@ struct EditBoardingPointView: View {
     store.routes.keys.sorted {
       let comparison = $0.name.localizedStandardCompare($1.name)
       if comparison == .orderedSame {
-        return $0.id < $1.id
+        return $0.id.stationID < $1.id.stationID
       }
       return comparison == .orderedAscending
     }
@@ -263,7 +263,7 @@ struct EditBoardingPointView: View {
   private func busStopAccessibilityLabel(_ busStop: BusStop) -> String {
     let components = [
       busStop.name,
-      "정류장 번호 \(busStop.id)",
+      "정류장 번호 \(busStop.id.stationID)",
       "선택 노선 \(routeSummary(for: busStop))",
     ]
     return components.joined(separator: ", ")
