@@ -12,6 +12,10 @@ let package = Package(
       targets: ["DashDomain"]
     ),
     .library(
+      name: "DashData",
+      targets: ["DashData"]
+    ),
+    .library(
       name: "DashFeature",
       targets: ["DashFeature"]
     ),
@@ -21,6 +25,11 @@ let package = Package(
     .target(
       name: "DashDomain",
       path: "DashDomain"
+    ),
+    .target(
+      name: "DashData",
+      dependencies: ["DashDomain"],
+      path: "DashData"
     ),
     .target(
       name: "DashFeature",

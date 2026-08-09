@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8C0A00013000000100000001 /* DashData in Frameworks */ = {isa = PBXBuildFile; productRef = 8C0A00013000000100000002 /* DashData */; };
 		8C4332B02FF94E6C0059A96B /* DashFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 8C4332AF2FF94E6C0059A96B /* DashFeature */; };
 		8C8BC89B2FF9D4D90091ADE5 /* DashPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 8C8BC89A2FF9D4D90091ADE5 /* DashPlatform */; };
 /* End PBXBuildFile section */
@@ -43,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C0A00013000000100000001 /* DashData in Frameworks */,
 				8C4332B02FF94E6C0059A96B /* DashFeature in Frameworks */,
 				8C8BC89B2FF9D4D90091ADE5 /* DashPlatform in Frameworks */,
 			);
@@ -97,6 +99,7 @@
 			);
 			name = Dash;
 			packageProductDependencies = (
+				8C0A00013000000100000002 /* DashData */,
 				8C4332AF2FF94E6C0059A96B /* DashFeature */,
 				8C8BC89A2FF9D4D90091ADE5 /* DashPlatform */,
 			);
@@ -402,6 +405,11 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		8C0A00013000000100000002 /* DashData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C81D8E92FF94CA100F06FED /* XCLocalSwiftPackageReference "DashFeature" */;
+			productName = DashData;
+		};
 		8C4332AF2FF94E6C0059A96B /* DashFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8C81D8E92FF94CA100F06FED /* XCLocalSwiftPackageReference "DashFeature" */;
