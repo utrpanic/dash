@@ -52,21 +52,12 @@ struct SelectBusRoutesView: View {
 
   private var busStopSummary: some View {
     VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
-      Text(store.busStop.name)
-        .font(r.font.rowTitle)
-        .foregroundStyle(r.color.textPrimary)
-        .lineLimit(2)
-
-      Text(verbatim: "정류장 번호 \(store.busStop.id)")
-        .font(r.font.metadata)
-        .foregroundStyle(r.color.textSecondary)
-    }
-    .padding(.horizontal, r.dimen.spacingMedium)
-  }
-
-  private var routesSection: some View {
-    VStack(alignment: .leading, spacing: r.dimen.spacingSmall) {
-      DashSectionHeader("이 정류장을 지나는 노선") {
+      HStack(spacing: 0) {
+        Text(store.busStop.name)
+          .font(r.font.rowTitle)
+          .foregroundStyle(r.color.textPrimary)
+          .lineLimit(2)
+        Spacer(minLength: r.dimen.spacingXSmall)
         Button(store.allRoutesAreSelected ? "모두 해제" : "모두 선택") {
           store.send(.selectAllButtonTapped)
         }
@@ -77,13 +68,20 @@ struct SelectBusRoutesView: View {
         .disabled(store.routeOptions.isEmpty)
         .opacity(store.routeOptions.isEmpty ? r.opacity.disabled : 1)
       }
-      .padding(.horizontal, r.dimen.spacingMedium)
 
-      if store.routeOptions.isEmpty {
-        emptyRoutesState
-      } else {
-        routeList
-      }
+      Text(verbatim: "정류장 번호 \(store.busStop.id)")
+        .font(r.font.metadata)
+        .foregroundStyle(r.color.textSecondary)
+    }
+    .padding(.horizontal, r.dimen.spacingMedium)
+  }
+
+  @ViewBuilder
+  private var routesSection: some View {
+    if store.routeOptions.isEmpty {
+      emptyRoutesState
+    } else {
+      routeList
     }
   }
 
