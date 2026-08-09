@@ -106,10 +106,9 @@ struct CurrentBoardingPointFeature: Sendable {
     case loadUpcomingBuses
   }
 
-  @Dependency(\.gyeonggiBusArrivalAPIClient) var gyeonggiBusArrivalAPIClient
+  @Dependency(\.busArrivalRepository) var busArrivalRepository: any BusArrivalRepository
   @Dependency(\.boardingPointRepository) var boardingPointRepository
   @Dependency(\.date.now) var now
-  @Dependency(\.seoulBusArrivalAPIClient) var seoulBusArrivalAPIClient
   @Dependency(\.userLocationClient) var userLocationClient
   
   init() {}
@@ -419,23 +418,11 @@ private extension CurrentBoardingPointFeature {
     var upcomingBuses: [UpcomingBus] = []
 
     for (busStop, busRoutes) in boardingPoint.routes {
-      let matchingArrivals: [BusArrival]
-      switch busStop.id {
-      case let .gyeonggi(stationID):
-        let busRouteIDs = Set(busRoutes.map(\.id))
-        let arrivals = try await gyeonggiBusArrivalAPIClient.fetchArrivals(stationID)
-        matchingArrivals = arrivals.filter { busRouteIDs.contains($0.route.id) }
-
-      case let .seoul(stationID, _):
-        var arrivalsAtStop: [BusArrival] = []
-        for busRoute in busRoutes {
-          let arrivals = try await seoulBusArrivalAPIClient.fetchArrivalsByRoute(busRoute.id)
-          arrivalsAtStop.append(contentsOf: arrivals.filter { $0.stationId == stationID })
-        }
-        matchingArrivals = arrivalsAtStop
-      }
-
-      for arrival in matchingArrivals {
+      let arrivals = try await busArrivalRepository.fetchArrivals(
+        at: busStop,
+        for: busRoutes
+      )
+      for arrival in arrivals {
         upcomingBuses.append(
           contentsOf: arrival.upcomingBuses(boardingPoint: boardingPoint, busStop: busStop)
         )

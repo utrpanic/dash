@@ -6,10 +6,8 @@ public struct DashFeatureView: View {
 
   public init(
     boardingPointRepository: BoardingPointRepositoryClient,
-    gyeonggiBusArrivalAPIClient: GyeonggiBusArrivalAPIClient,
-    gyeonggiBusStationAPIClient: GyeonggiBusStationAPIClient,
-    seoulBusArrivalAPIClient: SeoulBusArrivalAPIClient,
-    seoulBusStationAPIClient: SeoulBusStationAPIClient
+    busArrivalRepository: any BusArrivalRepository,
+    busRouteRepository: any BusRouteRepository
   ) {
     self.store = Store(
       initialState: DashFeature.State()
@@ -17,10 +15,8 @@ public struct DashFeatureView: View {
       DashFeature()
     } withDependencies: {
       $0.boardingPointRepository = boardingPointRepository
-      $0.gyeonggiBusArrivalAPIClient = gyeonggiBusArrivalAPIClient
-      $0.gyeonggiBusStationAPIClient = gyeonggiBusStationAPIClient
-      $0.seoulBusArrivalAPIClient = seoulBusArrivalAPIClient
-      $0.seoulBusStationAPIClient = seoulBusStationAPIClient
+      $0.busArrivalRepository = busArrivalRepository
+      $0.busRouteRepository = busRouteRepository
     }
   }
 
@@ -58,9 +54,7 @@ public struct DashFeatureView: View {
       },
       save: { _ in }
     ),
-    gyeonggiBusArrivalAPIClient: .testValue,
-    gyeonggiBusStationAPIClient: .testValue,
-    seoulBusArrivalAPIClient: .testValue,
-    seoulBusStationAPIClient: .testValue
+    busArrivalRepository: EmptyBusArrivalRepository(),
+    busRouteRepository: EmptyBusRouteRepository()
   )
 }

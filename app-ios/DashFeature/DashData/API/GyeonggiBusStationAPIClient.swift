@@ -1,7 +1,6 @@
-import DashDomain
 import Foundation
 
-public struct GyeonggiBusStationAPIService: GyeonggiBusStationAPI {
+public struct GyeonggiBusStationAPIService: Sendable {
   private let dataGoKrServiceKey: String
 
   public static let liveValue = Self(dataGoKrServiceKey: DashDataServiceKey.dataGoKrServiceKey)
@@ -10,11 +9,11 @@ public struct GyeonggiBusStationAPIService: GyeonggiBusStationAPI {
     self.dataGoKrServiceKey = dataGoKrServiceKey
   }
 
-  public func fetchRoutes(_ stationId: Int) async throws -> [BusRoute] {
+  public func fetchRoutes(_ stationId: Int) async throws -> [BusStationViaRouteDTO] {
     let responseDTO: BusStationViaRouteListResponseDTO = try await fetch(
       .viaRouteList(stationId: stationId, serviceKey: serviceKey())
     )
-    return responseDTO.toDomain()
+    return responseDTO.response.msgBody?.busRouteList.values ?? []
   }
 }
 

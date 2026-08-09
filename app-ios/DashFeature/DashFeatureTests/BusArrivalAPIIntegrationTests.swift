@@ -8,9 +8,9 @@ import DashData
   let firstArrival = try #require(arrivals.first)
 
   #expect(!arrivals.isEmpty)
-  #expect(firstArrival.stationId == 200000275)
-  #expect(firstArrival.route.id > 0)
-  #expect(!firstArrival.route.number.isEmpty)
+  #expect(firstArrival.stationId.value == 200000275)
+  #expect(firstArrival.routeId.value > 0)
+  #expect(!firstArrival.routeName.value.isEmpty)
 }
 
 @Test func fetchBusArrivalThroughFeature() async throws {
@@ -19,15 +19,15 @@ import DashData
   let firstArrival = try #require(arrivals.first)
 
   let arrival = try await api.fetchArrival(
-    firstArrival.stationId,
-    firstArrival.route.id,
-    firstArrival.stationOrder
+    firstArrival.stationId.value,
+    firstArrival.routeId.value,
+    firstArrival.staOrder.value
   )
 
-  #expect(arrival.stationId == firstArrival.stationId)
-  #expect(arrival.route.id == firstArrival.route.id)
-  #expect(!arrival.route.number.isEmpty)
-  #expect(arrival.stationOrder == firstArrival.stationOrder)
+  #expect(arrival.stationId.value == firstArrival.stationId.value)
+  #expect(arrival.routeId.value == firstArrival.routeId.value)
+  #expect(!arrival.routeName.value.isEmpty)
+  #expect(arrival.staOrder.value == firstArrival.staOrder.value)
 }
 
 @Test func fetchBoardingPointBusArrivalsThroughFeature() async throws {

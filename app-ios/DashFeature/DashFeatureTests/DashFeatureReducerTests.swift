@@ -48,8 +48,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     CurrentBoardingPointFeature()
   } withDependencies: {
     $0.date.now = testNow
-    $0.seoulBusArrivalAPIClient.fetchArrivalsByRoute = { routeID in
-      guard routeID == BusRoute.route662.id else { return [] }
+    $0.busArrivalRepository = BusArrivalRepositoryStub { busStop, routes in
+      guard busStop == .theHyundaiSeoul, routes == [.route662] else { return [] }
       return [
         BusArrival(
           stationId: BusStop.theHyundaiSeoul.id.stationID,

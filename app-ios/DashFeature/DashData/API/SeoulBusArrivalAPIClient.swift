@@ -1,6 +1,4 @@
-import DashDomain
-
-public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
+public struct SeoulBusArrivalAPIService: Sendable {
   private let dataGoKrServiceKey: String
 
   public static let liveValue = Self(dataGoKrServiceKey: DashDataServiceKey.dataGoKrServiceKey)
@@ -13,7 +11,7 @@ public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
     _ stationId: Int,
     _ routeId: Int,
     _ stationOrder: Int
-  ) async throws -> BusArrival {
+  ) async throws -> SeoulBusArrivalDTO {
     try await fetchArrival(
       path: "/api/rest/arrive/getArrInfoByRoute",
       stationId: stationId,
@@ -22,7 +20,7 @@ public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
     )
   }
 
-  public func fetchArrivalsByRoute(_ routeId: Int) async throws -> [BusArrival] {
+  public func fetchArrivalsByRoute(_ routeId: Int) async throws -> [SeoulBusArrivalDTO] {
     let response = try await SeoulBusAPITransport.fetch(
       path: "/api/rest/arrive/getArrInfoByRouteAll",
       parameters: [
@@ -31,14 +29,14 @@ public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
       ]
     )
 
-    return try response.items.map { try SeoulBusArrivalDTO(fields: $0).toDomain() }
+    return try response.items.map { try SeoulBusArrivalDTO(fields: $0) }
   }
 
   public func fetchLowFloorArrival(
     _ stationId: Int,
     _ routeId: Int,
     _ stationOrder: Int
-  ) async throws -> BusArrival {
+  ) async throws -> SeoulBusArrivalDTO {
     try await fetchArrival(
       path: "/api/rest/arrive/getLowArrInfoByRoute",
       stationId: stationId,
@@ -47,7 +45,7 @@ public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
     )
   }
 
-  public func fetchLowFloorArrivals(_ stationId: Int) async throws -> [BusArrival] {
+  public func fetchLowFloorArrivals(_ stationId: Int) async throws -> [SeoulBusArrivalDTO] {
     let response = try await SeoulBusAPITransport.fetch(
       path: "/api/rest/arrive/getLowArrInfoByStId",
       parameters: [
@@ -56,7 +54,7 @@ public struct SeoulBusArrivalAPIService: SeoulBusArrivalAPI {
       ]
     )
 
-    return try response.items.map { try SeoulBusArrivalDTO(fields: $0).toDomain() }
+    return try response.items.map { try SeoulBusArrivalDTO(fields: $0) }
   }
 }
 
@@ -66,7 +64,7 @@ private extension SeoulBusArrivalAPIService {
     stationId: Int,
     routeId: Int,
     stationOrder: Int
-  ) async throws -> BusArrival {
+  ) async throws -> SeoulBusArrivalDTO {
     let response = try await SeoulBusAPITransport.fetch(
       path: path,
       parameters: [
@@ -80,7 +78,7 @@ private extension SeoulBusArrivalAPIService {
       throw SeoulBusAPIError.malformedResponse("Missing arrival item.")
     }
 
-    return try SeoulBusArrivalDTO(fields: item).toDomain()
+    return try SeoulBusArrivalDTO(fields: item)
   }
 
   func serviceKey() throws -> String {

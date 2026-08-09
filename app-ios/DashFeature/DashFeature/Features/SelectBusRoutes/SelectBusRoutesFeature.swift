@@ -61,8 +61,7 @@ struct SelectBusRoutesFeature {
     case failure(String)
   }
 
-  @Dependency(\.gyeonggiBusStationAPIClient) var gyeonggiBusStationAPIClient
-  @Dependency(\.seoulBusStationAPIClient) var seoulBusStationAPIClient
+  @Dependency(\.busRouteRepository) var busRouteRepository: any BusRouteRepository
 
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -73,16 +72,10 @@ struct SelectBusRoutesFeature {
         }
         state.isLoadingRoutes = true
         state.routeLoadErrorMessage = nil
-        let busStopID = state.busStop.id
+        let busStop = state.busStop
         return .run { send in
           do {
-            let routes: [BusRoute]
-            switch busStopID {
-            case let .gyeonggi(stationID):
-              routes = try await gyeonggiBusStationAPIClient.fetchRoutes(stationID)
-            case let .seoul(_, arsID):
-              routes = try await seoulBusStationAPIClient.fetchRoutes(arsID)
-            }
+            let routes = try await busRouteRepository.fetchRoutes(at: busStop)
             await send(.routeOptionsResponse(.success(routes)))
           } catch {
             await send(.routeOptionsResponse(.failure(String(describing: error))))

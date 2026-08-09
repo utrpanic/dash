@@ -33,18 +33,8 @@ struct DashApp: App {
             try await boardingPointRepository.saveConfiguration(configuration)
           }
         ),
-        gyeonggiBusArrivalAPIClient: GyeonggiBusArrivalAPIClient(
-          api: GyeonggiBusArrivalAPIService.liveValue
-        ),
-        gyeonggiBusStationAPIClient: GyeonggiBusStationAPIClient(
-          api: GyeonggiBusStationAPIService.liveValue
-        ),
-        seoulBusArrivalAPIClient: SeoulBusArrivalAPIClient(
-          api: SeoulBusArrivalAPIService.liveValue
-        ),
-        seoulBusStationAPIClient: SeoulBusStationAPIClient(
-          api: SeoulBusStationAPIService.liveValue
-        )
+        busArrivalRepository: LiveBusArrivalRepository.liveValue,
+        busRouteRepository: LiveBusRouteRepository.liveValue
       )
     }
   }

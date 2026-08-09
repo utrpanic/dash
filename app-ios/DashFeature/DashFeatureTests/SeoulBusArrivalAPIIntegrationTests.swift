@@ -1,6 +1,6 @@
 import ComposableArchitecture
 import Testing
-import DashData
+@testable import DashData
 @testable import DashFeature
 
 private let seoulArrivalSampleRouteID = BusRoute.route662.id
@@ -12,8 +12,8 @@ private let seoulBusArrivalAPI = SeoulBusArrivalAPIService.liveValue
   )
   let firstArrival = try #require(arrivals.first)
 
-  #expect(firstArrival.route.id == seoulArrivalSampleRouteID)
-  #expect(!firstArrival.route.number.isEmpty)
+  #expect(firstArrival.routeId == seoulArrivalSampleRouteID)
+  #expect(!firstArrival.routeNumber.isEmpty)
   #expect(firstArrival.stationId > 0)
   #expect(firstArrival.stationOrder > 0)
 }
@@ -26,12 +26,12 @@ private let seoulBusArrivalAPI = SeoulBusArrivalAPIService.liveValue
 
   let arrival = try await seoulBusArrivalAPI.fetchArrival(
     expectedArrival.stationId,
-    expectedArrival.route.id,
+    expectedArrival.routeId,
     expectedArrival.stationOrder
   )
 
   #expect(arrival.stationId == expectedArrival.stationId)
-  #expect(arrival.route.id == expectedArrival.route.id)
+  #expect(arrival.routeId == expectedArrival.routeId)
   #expect(arrival.stationOrder == expectedArrival.stationOrder)
 }
 
@@ -52,11 +52,11 @@ private let seoulBusArrivalAPI = SeoulBusArrivalAPIService.liveValue
 
   let arrival = try await seoulBusArrivalAPI.fetchLowFloorArrival(
     expectedArrival.stationId,
-    expectedArrival.route.id,
+    expectedArrival.routeId,
     expectedArrival.stationOrder
   )
 
   #expect(arrival.stationId == expectedArrival.stationId)
-  #expect(arrival.route.id == expectedArrival.route.id)
+  #expect(arrival.routeId == expectedArrival.routeId)
   #expect(arrival.stationOrder == expectedArrival.stationOrder)
 }

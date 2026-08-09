@@ -9,23 +9,11 @@ private let initialSeoulStops: [BusStop] = [
 
 @Suite struct InitialSeoulBusStopIntegrationTests {
   @Test func initialSeoulStopsUseVerifiedARSIDs() async throws {
-    let api = SeoulBusStationAPIService.liveValue
+    let repository = LiveBusRouteRepository.liveValue
     for stop in initialSeoulStops {
-      let arsID = try seoulARSID(for: stop)
-      let routes = try await api.fetchRoutes(arsID)
+      let routes = try await repository.fetchRoutes(at: stop)
 
       #expect(routes.contains(.route662))
     }
   }
-}
-
-private func seoulARSID(for stop: BusStop) throws -> String {
-  guard case let .seoul(_, arsID) = stop.id else {
-    throw InitialSeoulBusStopIntegrationTestError.notSeoulStop
-  }
-  return arsID
-}
-
-private enum InitialSeoulBusStopIntegrationTestError: Error {
-  case notSeoulStop
 }

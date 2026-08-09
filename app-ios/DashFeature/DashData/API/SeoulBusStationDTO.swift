@@ -1,6 +1,6 @@
 import DashDomain
 
-struct SeoulBusRouteAtStationDTO: Equatable, Sendable {
+public struct SeoulBusRouteAtStationDTO: Equatable, Sendable {
   let routeID: Int
   let routeNumber: String
 

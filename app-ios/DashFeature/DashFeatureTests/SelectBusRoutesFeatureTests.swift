@@ -14,8 +14,8 @@ import Testing
   ) {
     SelectBusRoutesFeature()
   } withDependencies: {
-    $0.gyeonggiBusStationAPIClient.fetchRoutes = { stationId in
-      #expect(stationId == BusStop.suwonStationExit7Outer.id.stationID)
+    $0.busRouteRepository = BusRouteRepositoryStub { busStop in
+      #expect(busStop == .suwonStationExit7Outer)
       return [route]
     }
   }
@@ -40,8 +40,8 @@ import Testing
   ) {
     SelectBusRoutesFeature()
   } withDependencies: {
-    $0.seoulBusStationAPIClient.fetchRoutes = { arsID in
-      #expect(arsID == "19282")
+    $0.busRouteRepository = BusRouteRepositoryStub { busStop in
+      #expect(busStop == .theHyundaiSeoul)
       return [route]
     }
   }
