@@ -77,8 +77,8 @@ public struct BusRouteInfoDTO: Decodable, Equatable, Sendable {
       routeTypeName: routeTypeName ?? "",
       regionName: regionName ?? "",
       companyName: companyName ?? "",
-      startStationName: startStationName ?? "",
-      endStationName: endStationName ?? ""
+      startStopName: startStationName ?? "",
+      endStopName: endStationName ?? ""
     )
   }
 }

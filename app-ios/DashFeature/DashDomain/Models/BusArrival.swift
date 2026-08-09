@@ -2,27 +2,27 @@ import Foundation
 
 public struct BusArrival: Equatable, Hashable, Identifiable, Sendable {
   public var id: String {
-    "\(stationId)-\(route.id)-\(stationOrder)"
+    "\(stopID)-\(route.id)-\(stopOrder)"
   }
 
-  public let stationId: Int
+  public let stopID: Int
   public let route: BusRoute
-  public let stationOrder: Int
+  public let stopOrder: Int
   public let operationState: String
   public let firstPrediction: BusArrivalPrediction?
   public let secondPrediction: BusArrivalPrediction?
 
   public init(
-    stationId: Int,
+    stopID: Int,
     route: BusRoute,
-    stationOrder: Int,
+    stopOrder: Int,
     operationState: String,
     firstPrediction: BusArrivalPrediction?,
     secondPrediction: BusArrivalPrediction?
   ) {
-    self.stationId = stationId
+    self.stopID = stopID
     self.route = route
-    self.stationOrder = stationOrder
+    self.stopOrder = stopOrder
     self.operationState = operationState
     self.firstPrediction = firstPrediction
     self.secondPrediction = secondPrediction
@@ -52,7 +52,7 @@ public struct BusArrivalPrediction: Equatable, Hashable, Sendable {
   public let plateNumber: String
   public let remainingSeatCount: Int?
   public let stateCode: Int?
-  public let stationName: String
+  public let stopName: String
   public let vehicleId: Int?
 
   public var timeIntervalUntilArrival: TimeInterval? {
@@ -74,7 +74,7 @@ public struct BusArrivalPrediction: Equatable, Hashable, Sendable {
     plateNumber: String,
     remainingSeatCount: Int?,
     stateCode: Int?,
-    stationName: String,
+    stopName: String,
     vehicleId: Int?
   ) {
     self.minutes = minutes
@@ -83,7 +83,7 @@ public struct BusArrivalPrediction: Equatable, Hashable, Sendable {
     self.plateNumber = plateNumber
     self.remainingSeatCount = remainingSeatCount
     self.stateCode = stateCode
-    self.stationName = stationName
+    self.stopName = stopName
     self.vehicleId = vehicleId
   }
 }

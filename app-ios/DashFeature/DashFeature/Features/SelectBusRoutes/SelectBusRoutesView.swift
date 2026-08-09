@@ -73,7 +73,7 @@ struct SelectBusRoutesView: View {
         .opacity(store.routeOptions.isEmpty ? r.opacity.disabled : 1)
       }
 
-      Text(verbatim: "정류장 번호 \(store.busStop.id.stationID)")
+      Text(verbatim: "정류장 번호 \(store.busStop.id.stopID)")
         .font(r.font.metadata)
         .foregroundStyle(r.color.textSecondary)
     }

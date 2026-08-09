@@ -32,13 +32,13 @@ import DashData
 
 @Test func fetchBoardingPointBusArrivalsThroughFeature() async throws {
   let api = GyeonggiBusArrivalAPIService.liveValue
-  let stationIds = [
-    BusStop.suwonStationExit7Outer.id.stationID,
-    BusStop.suwonStationExit7Inner.id.stationID,
-    BusStop.homaesilSsangyongApartment.id.stationID,
+  let stopIDs = [
+    BusStop.suwonStationExit7Outer.id.stopID,
+    BusStop.suwonStationExit7Inner.id.stopID,
+    BusStop.homaesilSsangyongApartment.id.stopID,
   ]
 
-  for stationId in stationIds {
-    _ = try await api.fetchArrivals(stationId)
+  for stopID in stopIDs {
+    _ = try await api.fetchArrivals(stopID)
   }
 }

@@ -25,9 +25,9 @@ public struct SeoulBusArrivalDTO: Equatable, Sendable {
 
   func toDomain() -> BusArrival {
     BusArrival(
-      stationId: stationId,
+      stopID: stationId,
       route: BusRoute(id: routeId, number: routeNumber),
-      stationOrder: stationOrder,
+      stopOrder: stationOrder,
       operationState: isDetouring ? "우회" : "",
       firstPrediction: firstPrediction?.toDomain(),
       secondPrediction: secondPrediction?.toDomain()
@@ -76,7 +76,7 @@ extension SeoulBusArrivalDTO {
         plateNumber: plateNumber,
         remainingSeatCount: remainingSeatCount,
         stateCode: stateCode,
-        stationName: stationName,
+        stopName: stationName,
         vehicleId: vehicleId
       )
     }

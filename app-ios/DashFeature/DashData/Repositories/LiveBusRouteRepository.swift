@@ -19,8 +19,8 @@ public struct LiveBusRouteRepository: BusRouteRepository {
 
   public func fetchRoutes(at busStop: BusStop) async throws -> [BusRoute] {
     switch busStop.id {
-    case let .gyeonggi(stationID):
-      try await gyeonggiAPI.fetchRoutes(stationID).map { $0.toDomain() }
+    case let .gyeonggi(stopID):
+      try await gyeonggiAPI.fetchRoutes(stopID).map { $0.toDomain() }
     case let .seoul(_, arsID):
       try await seoulAPI.fetchRoutes(arsID).map { $0.toDomain() }
     }

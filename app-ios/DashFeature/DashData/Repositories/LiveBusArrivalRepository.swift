@@ -25,19 +25,19 @@ public struct LiveBusArrivalRepository: BusArrivalRepository {
 
     let routeIDs = Set(routes.map(\.id))
     switch busStop.id {
-    case let .gyeonggi(stationID):
-      return try await gyeonggiAPI.fetchArrivals(stationID)
+    case let .gyeonggi(stopID):
+      return try await gyeonggiAPI.fetchArrivals(stopID)
         .map { $0.toDomain() }
         .filter { routeIDs.contains($0.route.id) }
 
-    case let .seoul(stationID, _):
+    case let .seoul(stopID, _):
       var arrivals: [BusArrival] = []
       for route in routes {
         let routeArrivals = try await seoulAPI.fetchArrivalsByRoute(route.id)
         arrivals.append(
           contentsOf: routeArrivals
             .map { $0.toDomain() }
-            .filter { $0.stationId == stationID }
+            .filter { $0.stopID == stopID }
         )
       }
       return arrivals

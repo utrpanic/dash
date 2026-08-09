@@ -23,8 +23,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     id: "test",
     name: "Test",
     routes: [
-      BusStop(id: .gyeonggi(stationID: 1), name: "First", latitude: 37, longitude: 126): [],
-      BusStop(id: .gyeonggi(stationID: 2), name: "Second", latitude: 39, longitude: 128): [],
+      BusStop(id: .gyeonggi(stopID: 1), name: "First", latitude: 37, longitude: 126): [],
+      BusStop(id: .gyeonggi(stopID: 2), name: "Second", latitude: 39, longitude: 128): [],
     ]
   )
 
@@ -52,9 +52,9 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
       guard busStop == .theHyundaiSeoul, routes == [.route662] else { return [] }
       return [
         BusArrival(
-          stationId: BusStop.theHyundaiSeoul.id.stationID,
+          stopID: BusStop.theHyundaiSeoul.id.stopID,
           route: .route662,
-          stationOrder: 29,
+          stopOrder: 29,
           operationState: "",
           firstPrediction: BusArrivalPrediction(
             minutes: 4,
@@ -63,7 +63,7 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
             plateNumber: "",
             remainingSeatCount: nil,
             stateCode: nil,
-            stationName: "",
+            stopName: "",
             vehicleId: nil
           ),
           secondPrediction: nil

@@ -39,8 +39,8 @@ struct SeoulBusRouteInfoDTO: Equatable, Sendable {
       routeTypeName: routeType.map(Self.routeTypeName) ?? "",
       regionName: "서울",
       companyName: companyName,
-      startStationName: startStationName,
-      endStationName: endStationName
+      startStopName: startStationName,
+      endStopName: endStationName
     )
   }
 

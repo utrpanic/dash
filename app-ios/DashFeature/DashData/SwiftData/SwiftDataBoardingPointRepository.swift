@@ -60,8 +60,8 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
   }
 
   private func busStopID(from record: BoardingPointStopRecord) -> BusStop.ID {
-    BusStop.allKnown.first { $0.id.stationID == record.busStopID }?.id
-      ?? .gyeonggi(stationID: record.busStopID)
+    BusStop.allKnown.first { $0.id.stopID == record.busStopID }?.id
+      ?? .gyeonggi(stopID: record.busStopID)
   }
 
   private var initialConfiguration: BoardingPointConfiguration {
@@ -97,11 +97,11 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
     sortIndex: Int
   ) -> BoardingPointRecord {
     let stops = boardingPoint.routes.keys
-      .sorted { $0.id.stationID < $1.id.stationID }
+      .sorted { $0.id.stopID < $1.id.stopID }
       .map { stop in
         BoardingPointStopRecord(
           id: "\(boardingPoint.id)-\(stop.id.storageKey)",
-          busStopID: stop.id.stationID,
+          busStopID: stop.id.stopID,
           name: stop.name,
           alias: stop.alias,
           latitude: stop.latitude,

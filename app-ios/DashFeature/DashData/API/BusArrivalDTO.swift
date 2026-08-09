@@ -78,9 +78,9 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
 
   func toDomain() -> BusArrival {
     BusArrival(
-      stationId: stationId.value,
+      stopID: stationId.value,
       route: BusRoute(id: routeId.value, number: routeName.value),
-      stationOrder: staOrder.value,
+      stopOrder: staOrder.value,
       operationState: flag ?? "",
       firstPrediction: prediction(
         minutes: predictTime1?.value,
@@ -89,7 +89,7 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
         plateNumber: plateNo1,
         remainingSeatCount: remainSeatCnt1?.value,
         stateCode: stateCd1?.value,
-        stationName: stationNm1,
+        stopName: stationNm1,
         vehicleId: vehId1?.value
       ),
       secondPrediction: prediction(
@@ -99,7 +99,7 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
         plateNumber: plateNo2,
         remainingSeatCount: remainSeatCnt2?.value,
         stateCode: stateCd2?.value,
-        stationName: stationNm2,
+        stopName: stationNm2,
         vehicleId: vehId2?.value
       )
     )
@@ -112,7 +112,7 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
     plateNumber: String?,
     remainingSeatCount: Int?,
     stateCode: Int?,
-    stationName: String?,
+    stopName: String?,
     vehicleId: Int?
   ) -> BusArrivalPrediction? {
     guard minutes != nil || seconds != nil || locationNumber != nil || vehicleId != nil else {
@@ -126,7 +126,7 @@ public struct BusArrivalDTO: Decodable, Equatable, Sendable {
       plateNumber: plateNumber ?? "",
       remainingSeatCount: remainingSeatCount,
       stateCode: stateCode,
-      stationName: stationName ?? "",
+      stopName: stopName ?? "",
       vehicleId: vehicleId
     )
   }
