@@ -16,7 +16,10 @@ struct CurrentBoardingPointFeature: Sendable {
 
     var boardingPoints: [BoardingPoint]
     var boardingPointSelection: BoardingPointSelection
+    var configurationLoadErrorMessage: String?
+    var hasLoadedConfiguration: Bool
     var hasRequestedInitialLocation: Bool
+    var isLoadingConfiguration: Bool
     var isRequestingUserLocation: Bool
     var upcomingBuses: [UpcomingBus]
     var isLoadingUpcomingBuses: Bool
@@ -28,9 +31,12 @@ struct CurrentBoardingPointFeature: Sendable {
     var busRouteSearchErrorMessage: String?
 
     init() {
-      self.boardingPoints = .mock
+      self.boardingPoints = []
       self.boardingPointSelection = .locating
+      self.configurationLoadErrorMessage = nil
+      self.hasLoadedConfiguration = false
       self.hasRequestedInitialLocation = false
+      self.isLoadingConfiguration = false
       self.isRequestingUserLocation = false
       self.upcomingBuses = []
       self.isLoadingUpcomingBuses = false
@@ -71,6 +77,7 @@ struct CurrentBoardingPointFeature: Sendable {
     case listButtonTapped
     case busRouteSearchRequested(keyword: String)
     case busRouteSearchResponse(BusRouteSearchResponse)
+    case configurationLoadResponse(ConfigurationLoadResponse)
     case loadUpcomingBuses
     case loadUpcomingBusesResponse(UpcomingBusesResponse)
     case locationButtonTapped
@@ -100,6 +107,11 @@ struct CurrentBoardingPointFeature: Sendable {
     case failure(String)
   }
 
+  enum ConfigurationLoadResponse: Equatable {
+    case success(BoardingPointConfiguration)
+    case failure(String)
+  }
+
   enum UpcomingBusesResponse: Equatable {
     case success([UpcomingBus])
     case failure(String)
@@ -111,6 +123,7 @@ struct CurrentBoardingPointFeature: Sendable {
 
   @Dependency(\.busArrivalAPIClient) var busArrivalAPIClient
   @Dependency(\.busRouteAPIClient) var busRouteAPIClient
+  @Dependency(\.boardingPointRepository) var boardingPointRepository
   @Dependency(\.date.now) var now
   @Dependency(\.seoulBusArrivalAPIClient) var seoulBusArrivalAPIClient
   @Dependency(\.userLocationClient) var userLocationClient
@@ -120,6 +133,32 @@ struct CurrentBoardingPointFeature: Sendable {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .configurationLoadResponse(.success(configuration)):
+        state.isLoadingConfiguration = false
+        state.hasLoadedConfiguration = true
+        state.configurationLoadErrorMessage = nil
+        state.boardingPoints = configuration.boardingPoints
+
+        guard !state.boardingPoints.isEmpty else {
+          state.boardingPointSelection = .noSelectedRoutes
+          return .none
+        }
+
+        if let currentBoardingPointID = configuration.currentBoardingPointID,
+           state.boardingPoints.contains(where: { $0.id == currentBoardingPointID }) {
+          state.boardingPointSelection = .selected(currentBoardingPointID)
+          return .send(.loadUpcomingBuses)
+        }
+
+        state.boardingPointSelection = .locating
+        return .send(.task)
+
+      case let .configurationLoadResponse(.failure(message)):
+        state.isLoadingConfiguration = false
+        state.configurationLoadErrorMessage = message
+        state.boardingPointSelection = .locationUnavailable
+        return .none
+
       case .editButtonTapped:
         guard let selectedBoardingPointID = state.selectedBoardingPointID,
               let boardingPoint = state.boardingPoints.first(
@@ -303,6 +342,24 @@ struct CurrentBoardingPointFeature: Sendable {
         return .send(.loadUpcomingBuses)
 
       case .task:
+        guard state.hasLoadedConfiguration else {
+          guard !state.isLoadingConfiguration else {
+            return .none
+          }
+          state.isLoadingConfiguration = true
+          state.configurationLoadErrorMessage = nil
+          let loadConfiguration = boardingPointRepository.loadConfiguration
+          return .run { send in
+            do {
+              await send(.configurationLoadResponse(.success(try await loadConfiguration())))
+            } catch {
+              await send(
+                .configurationLoadResponse(.failure(String(describing: error)))
+              )
+            }
+          }
+        }
+
         guard !state.hasRequestedInitialLocation else {
           return .none
         }

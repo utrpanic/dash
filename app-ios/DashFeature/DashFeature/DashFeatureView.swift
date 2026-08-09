@@ -4,9 +4,13 @@ import SwiftUI
 public struct DashFeatureView: View {
   @Bindable private var store: StoreOf<DashFeature>
 
-  public init() {
-    self.store = Store(initialState: DashFeature.State()) {
+  public init(boardingPointRepository: BoardingPointRepositoryClient) {
+    self.store = Store(
+      initialState: DashFeature.State()
+    ) {
       DashFeature()
+    } withDependencies: {
+      $0.boardingPointRepository = boardingPointRepository
     }
   }
 
@@ -34,5 +38,15 @@ public struct DashFeatureView: View {
 }
 
 #Preview {
-  DashFeatureView()
+  DashFeatureView(
+    boardingPointRepository: BoardingPointRepositoryClient(
+      load: {
+        BoardingPointConfiguration(
+          boardingPoints: .mock,
+          currentBoardingPointID: BoardingPoint.suwonStation.id
+        )
+      },
+      save: { _ in }
+    )
+  )
 }

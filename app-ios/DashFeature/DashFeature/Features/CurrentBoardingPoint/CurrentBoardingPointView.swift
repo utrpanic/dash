@@ -37,9 +37,17 @@ struct CurrentBoardingPointView: View {
       VStack(spacing: 0) {
         DashListDivider()
           .padding(.horizontal, -r.dimen.spacingMedium)
-        if store.isLoadingUpcomingBuses {
+        if store.isLoadingConfiguration || store.isLoadingUpcomingBuses {
           Spacer()
           ProgressView()
+            .frame(maxWidth: .infinity)
+          Spacer()
+        } else if let configurationLoadErrorMessage = store.configurationLoadErrorMessage {
+          Spacer()
+          Text(configurationLoadErrorMessage)
+            .font(r.font.body)
+            .foregroundStyle(r.color.textSecondary)
+            .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
           Spacer()
         } else if let boardingPointSelectionMessage {
