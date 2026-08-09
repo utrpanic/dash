@@ -2,7 +2,7 @@ import Testing
 @testable import DashFeature
 
 @Test func fetchBusArrivalsThroughFeature() async throws {
-  let arrivals = try await BusArrivalAPIClient.liveValue.fetchArrivals(200000275)
+  let arrivals = try await GyeonggiBusArrivalAPIClient.liveValue.fetchArrivals(200000275)
   let firstArrival = try #require(arrivals.first)
 
   #expect(!arrivals.isEmpty)
@@ -12,10 +12,10 @@ import Testing
 }
 
 @Test func fetchBusArrivalThroughFeature() async throws {
-  let arrivals = try await BusArrivalAPIClient.liveValue.fetchArrivals(200000275)
+  let arrivals = try await GyeonggiBusArrivalAPIClient.liveValue.fetchArrivals(200000275)
   let firstArrival = try #require(arrivals.first)
 
-  let arrival = try await BusArrivalAPIClient.liveValue.fetchArrival(
+  let arrival = try await GyeonggiBusArrivalAPIClient.liveValue.fetchArrival(
     firstArrival.stationId,
     firstArrival.route.id,
     firstArrival.stationOrder
@@ -35,6 +35,6 @@ import Testing
   ]
 
   for stationId in stationIds {
-    _ = try await BusArrivalAPIClient.liveValue.fetchArrivals(stationId)
+    _ = try await GyeonggiBusArrivalAPIClient.liveValue.fetchArrivals(stationId)
   }
 }

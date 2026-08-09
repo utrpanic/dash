@@ -61,7 +61,7 @@ struct SelectBusRoutesFeature {
     case failure(String)
   }
 
-  @Dependency(\.busStationAPIClient) var busStationAPIClient
+  @Dependency(\.gyeonggiBusStationAPIClient) var gyeonggiBusStationAPIClient
   @Dependency(\.seoulBusStationAPIClient) var seoulBusStationAPIClient
 
   var body: some ReducerOf<Self> {
@@ -79,7 +79,7 @@ struct SelectBusRoutesFeature {
             let routes: [BusRoute]
             switch busStopID {
             case let .gyeonggi(stationID):
-              routes = try await busStationAPIClient.fetchRoutes(stationID)
+              routes = try await gyeonggiBusStationAPIClient.fetchRoutes(stationID)
             case let .seoul(_, arsID):
               routes = try await seoulBusStationAPIClient.fetchRoutes(arsID)
             }

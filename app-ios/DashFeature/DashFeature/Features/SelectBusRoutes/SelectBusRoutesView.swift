@@ -182,7 +182,7 @@ struct SelectBusRoutesView: View {
       ) {
         SelectBusRoutesFeature()
       } withDependencies: {
-        $0.busStationAPIClient = .testValue
+        $0.gyeonggiBusStationAPIClient = .testValue
       }
     )
   }

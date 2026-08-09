@@ -25,10 +25,6 @@ struct CurrentBoardingPointFeature: Sendable {
     var isLoadingUpcomingBuses: Bool
     var upcomingBusesErrorMessage: String?
     var lastUpdatedAt: Date?
-    var busRouteSearchKeyword: String
-    var busRouteSearchResults: [BusRoute]
-    var isSearchingBusRoutes: Bool
-    var busRouteSearchErrorMessage: String?
 
     init() {
       self.boardingPoints = []
@@ -42,10 +38,6 @@ struct CurrentBoardingPointFeature: Sendable {
       self.isLoadingUpcomingBuses = false
       self.upcomingBusesErrorMessage = nil
       self.lastUpdatedAt = nil
-      self.busRouteSearchKeyword = ""
-      self.busRouteSearchResults = []
-      self.isSearchingBusRoutes = false
-      self.busRouteSearchErrorMessage = nil
     }
 
     var selectedBoardingPointID: BoardingPoint.ID? {
@@ -75,8 +67,6 @@ struct CurrentBoardingPointFeature: Sendable {
   enum Action: Equatable {
     case editButtonTapped
     case listButtonTapped
-    case busRouteSearchRequested(keyword: String)
-    case busRouteSearchResponse(BusRouteSearchResponse)
     case configurationLoadResponse(ConfigurationLoadResponse)
     case loadUpcomingBuses
     case loadUpcomingBusesResponse(UpcomingBusesResponse)
@@ -102,11 +92,6 @@ struct CurrentBoardingPointFeature: Sendable {
     case unavailable
   }
 
-  enum BusRouteSearchResponse: Equatable {
-    case success([BusRoute])
-    case failure(String)
-  }
-
   enum ConfigurationLoadResponse: Equatable {
     case success(BoardingPointConfiguration)
     case failure(String)
@@ -121,8 +106,7 @@ struct CurrentBoardingPointFeature: Sendable {
     case loadUpcomingBuses
   }
 
-  @Dependency(\.busArrivalAPIClient) var busArrivalAPIClient
-  @Dependency(\.busRouteAPIClient) var busRouteAPIClient
+  @Dependency(\.gyeonggiBusArrivalAPIClient) var gyeonggiBusArrivalAPIClient
   @Dependency(\.boardingPointRepository) var boardingPointRepository
   @Dependency(\.date.now) var now
   @Dependency(\.seoulBusArrivalAPIClient) var seoulBusArrivalAPIClient
@@ -170,31 +154,6 @@ struct CurrentBoardingPointFeature: Sendable {
         return .send(.delegate(.editBoardingPointRequested(boardingPoint)))
       case .listButtonTapped:
         return .send(.delegate(.boardingPointsRequested))
-      case let .busRouteSearchRequested(keyword):
-        state.busRouteSearchKeyword = keyword
-        state.isSearchingBusRoutes = true
-        state.busRouteSearchErrorMessage = nil
-        let searchRoutes = busRouteAPIClient.searchRoutes
-        return .run { send in
-          do {
-            let routes = try await searchRoutes(keyword)
-            await send(.busRouteSearchResponse(.success(routes)))
-          } catch {
-            await send(.busRouteSearchResponse(.failure(String(describing: error))))
-          }
-        }
-
-      case let .busRouteSearchResponse(.success(routes)):
-        state.isSearchingBusRoutes = false
-        state.busRouteSearchResults = routes
-        state.busRouteSearchErrorMessage = nil
-        return .none
-
-      case let .busRouteSearchResponse(.failure(message)):
-        state.isSearchingBusRoutes = false
-        state.busRouteSearchErrorMessage = message
-        return .none
-
       case .loadUpcomingBuses:
         guard let selectedBoardingPointID = state.selectedBoardingPointID,
               let boardingPoint = state.boardingPoints.first(
@@ -464,7 +423,7 @@ private extension CurrentBoardingPointFeature {
       switch busStop.id {
       case let .gyeonggi(stationID):
         let busRouteIDs = Set(busRoutes.map(\.id))
-        let arrivals = try await busArrivalAPIClient.fetchArrivals(stationID)
+        let arrivals = try await gyeonggiBusArrivalAPIClient.fetchArrivals(stationID)
         matchingArrivals = arrivals.filter { busRouteIDs.contains($0.route.id) }
 
       case let .seoul(stationID, _):

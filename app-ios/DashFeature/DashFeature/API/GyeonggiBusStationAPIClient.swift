@@ -2,7 +2,7 @@ import ComposableArchitecture
 import DashDomain
 import Foundation
 
-public struct BusStationAPIClient: Sendable {
+public struct GyeonggiBusStationAPIClient: Sendable {
   public var fetchRoutes: @Sendable (_ stationId: Int) async throws -> [BusRoute]
 
   public init(
@@ -12,7 +12,7 @@ public struct BusStationAPIClient: Sendable {
   }
 }
 
-extension BusStationAPIClient: DependencyKey {
+extension GyeonggiBusStationAPIClient: DependencyKey {
   public static let liveValue = Self(
     fetchRoutes: { stationId in
       let responseDTO: BusStationViaRouteListResponseDTO = try await Self.fetch(
@@ -26,13 +26,13 @@ extension BusStationAPIClient: DependencyKey {
 }
 
 extension DependencyValues {
-  public var busStationAPIClient: BusStationAPIClient {
-    get { self[BusStationAPIClient.self] }
-    set { self[BusStationAPIClient.self] = newValue }
+  public var gyeonggiBusStationAPIClient: GyeonggiBusStationAPIClient {
+    get { self[GyeonggiBusStationAPIClient.self] }
+    set { self[GyeonggiBusStationAPIClient.self] = newValue }
   }
 }
 
-public enum BusStationAPIError: Error, Equatable, Sendable {
+public enum GyeonggiBusStationAPIError: Error, Equatable, Sendable {
   case missingServiceKey
   case invalidURL
   case invalidResponse
@@ -40,7 +40,7 @@ public enum BusStationAPIError: Error, Equatable, Sendable {
   case apiFailure(resultCode: Int, message: String)
 }
 
-private enum BusStationAPIRequest {
+private enum GyeonggiBusStationAPIRequest {
   case viaRouteList(stationId: Int, serviceKey: String)
 
   func url() throws -> URL {
@@ -55,7 +55,7 @@ private enum BusStationAPIRequest {
     ].joined(separator: "&")
 
     guard let url = components.url else {
-      throw BusStationAPIError.invalidURL
+      throw GyeonggiBusStationAPIError.invalidURL
     }
 
     return url
@@ -87,9 +87,9 @@ private enum BusStationAPIRequest {
   }
 }
 
-private extension BusStationAPIClient {
+private extension GyeonggiBusStationAPIClient {
   static func fetch<ResponseDTO: Decodable & BusStationAPIResponseDTO>(
-    _ request: BusStationAPIRequest
+    _ request: GyeonggiBusStationAPIRequest
   ) async throws -> ResponseDTO {
     let url = try request.url()
     var urlRequest = URLRequest(url: url)
@@ -97,15 +97,15 @@ private extension BusStationAPIClient {
 
     let (data, response) = try await URLSession.shared.data(for: urlRequest)
     guard let httpResponse = response as? HTTPURLResponse else {
-      throw BusStationAPIError.invalidResponse
+      throw GyeonggiBusStationAPIError.invalidResponse
     }
     guard httpResponse.statusCode == 200 else {
-      throw BusStationAPIError.invalidStatusCode(httpResponse.statusCode)
+      throw GyeonggiBusStationAPIError.invalidStatusCode(httpResponse.statusCode)
     }
 
     let responseDTO = try JSONDecoder().decode(ResponseDTO.self, from: data)
     guard responseDTO.resultCode == 0 else {
-      throw BusStationAPIError.apiFailure(
+      throw GyeonggiBusStationAPIError.apiFailure(
         resultCode: responseDTO.resultCode,
         message: responseDTO.resultMessage
       )
@@ -117,7 +117,7 @@ private extension BusStationAPIClient {
   static func serviceKey() throws -> String {
     let serviceKey = Secrets.serviceKey.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !serviceKey.isEmpty else {
-      throw BusStationAPIError.missingServiceKey
+      throw GyeonggiBusStationAPIError.missingServiceKey
     }
 
     return serviceKey

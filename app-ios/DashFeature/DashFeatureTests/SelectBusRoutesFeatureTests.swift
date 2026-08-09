@@ -14,7 +14,7 @@ import Testing
   ) {
     SelectBusRoutesFeature()
   } withDependencies: {
-    $0.busStationAPIClient.fetchRoutes = { stationId in
+    $0.gyeonggiBusStationAPIClient.fetchRoutes = { stationId in
       #expect(stationId == BusStop.suwonStationExit7Outer.id.stationID)
       return [route]
     }

@@ -16,6 +16,8 @@ Current reference:
 
 ## API
 
+서비스 그룹과 현재 구현 상태는 [api/README.md](api/README.md)에 정리한다.
+
 ## 경기도_버스노선 조회
 
 File:

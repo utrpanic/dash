@@ -2,7 +2,7 @@ import ComposableArchitecture
 import DashDomain
 import Foundation
 
-public struct BusArrivalAPIClient: Sendable {
+public struct GyeonggiBusArrivalAPIClient: Sendable {
   public var fetchArrival: @Sendable (
     _ stationId: Int,
     _ routeId: Int,
@@ -23,7 +23,7 @@ public struct BusArrivalAPIClient: Sendable {
   }
 }
 
-extension BusArrivalAPIClient: DependencyKey {
+extension GyeonggiBusArrivalAPIClient: DependencyKey {
   public static let liveValue = Self(
     fetchArrival: { stationId, routeId, stationOrder in
       let responseDTO: BusArrivalItemResponseDTO = try await Self.fetch(
@@ -60,13 +60,13 @@ extension BusArrivalAPIClient: DependencyKey {
 }
 
 extension DependencyValues {
-  public var busArrivalAPIClient: BusArrivalAPIClient {
-    get { self[BusArrivalAPIClient.self] }
-    set { self[BusArrivalAPIClient.self] = newValue }
+  public var gyeonggiBusArrivalAPIClient: GyeonggiBusArrivalAPIClient {
+    get { self[GyeonggiBusArrivalAPIClient.self] }
+    set { self[GyeonggiBusArrivalAPIClient.self] = newValue }
   }
 }
 
-public enum BusArrivalAPIError: Error, Equatable, Sendable {
+public enum GyeonggiBusArrivalAPIError: Error, Equatable, Sendable {
   case missingServiceKey
   case invalidURL
   case invalidResponse
@@ -74,7 +74,7 @@ public enum BusArrivalAPIError: Error, Equatable, Sendable {
   case apiFailure(resultCode: Int, message: String)
 }
 
-private enum BusArrivalAPIRequest {
+private enum GyeonggiBusArrivalAPIRequest {
   case arrivalItem(stationId: Int, routeId: Int, stationOrder: Int, serviceKey: String)
   case arrivalList(stationId: Int, serviceKey: String)
 
@@ -86,7 +86,7 @@ private enum BusArrivalAPIRequest {
     components.percentEncodedQuery = query
 
     guard let url = components.url else {
-      throw BusArrivalAPIError.invalidURL
+      throw GyeonggiBusArrivalAPIError.invalidURL
     }
 
     return url
@@ -133,9 +133,9 @@ private enum BusArrivalAPIRequest {
   }
 }
 
-private extension BusArrivalAPIClient {
+private extension GyeonggiBusArrivalAPIClient {
   static func fetch<ResponseDTO: Decodable & BusArrivalAPIResponseDTO>(
-    _ request: BusArrivalAPIRequest
+    _ request: GyeonggiBusArrivalAPIRequest
   ) async throws -> ResponseDTO {
     let url = try request.url()
     var urlRequest = URLRequest(url: url)
@@ -143,15 +143,15 @@ private extension BusArrivalAPIClient {
 
     let (data, response) = try await URLSession.shared.data(for: urlRequest)
     guard let httpResponse = response as? HTTPURLResponse else {
-      throw BusArrivalAPIError.invalidResponse
+      throw GyeonggiBusArrivalAPIError.invalidResponse
     }
     guard httpResponse.statusCode == 200 else {
-      throw BusArrivalAPIError.invalidStatusCode(httpResponse.statusCode)
+      throw GyeonggiBusArrivalAPIError.invalidStatusCode(httpResponse.statusCode)
     }
 
     let responseDTO = try JSONDecoder().decode(ResponseDTO.self, from: data)
     guard responseDTO.resultCode == 0 else {
-      throw BusArrivalAPIError.apiFailure(
+      throw GyeonggiBusArrivalAPIError.apiFailure(
         resultCode: responseDTO.resultCode,
         message: responseDTO.resultMessage
       )
@@ -163,7 +163,7 @@ private extension BusArrivalAPIClient {
   static func serviceKey() throws -> String {
     let serviceKey = Secrets.serviceKey.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !serviceKey.isEmpty else {
-      throw BusArrivalAPIError.missingServiceKey
+      throw GyeonggiBusArrivalAPIError.missingServiceKey
     }
 
     return serviceKey
