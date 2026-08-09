@@ -1,3 +1,5 @@
+import DashDomain
+
 public struct BusRouteListResponseDTO: Decodable, Equatable, Sendable {
   public let response: ResponseDTO
 

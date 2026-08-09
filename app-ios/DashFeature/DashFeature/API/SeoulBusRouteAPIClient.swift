@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import DashDomain
 
 public struct SeoulBusRouteAPIClient: Sendable {
   public var fetchRouteInfo: @Sendable (_ routeId: Int) async throws -> BusRouteInfo

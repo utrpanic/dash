@@ -1,3 +1,5 @@
+import DashDomain
+
 struct SeoulBusArrivalDTO: Equatable, Sendable {
   let stationId: Int
   let routeId: Int

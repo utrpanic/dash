@@ -23,7 +23,7 @@ public struct UpcomingBus: Equatable, Hashable, Identifiable, Sendable {
   }
 }
 
-extension Array where Element == UpcomingBus {
+public extension Array where Element == UpcomingBus {
   var sortedByArrival: [UpcomingBus] {
     sorted { $0.timeIntervalUntilArrival < $1.timeIntervalUntilArrival }
   }

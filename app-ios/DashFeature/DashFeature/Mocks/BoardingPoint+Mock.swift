@@ -1,3 +1,5 @@
+import DashDomain
+
 extension Array where Element == BoardingPoint {
   static var mock: [BoardingPoint] {
     [

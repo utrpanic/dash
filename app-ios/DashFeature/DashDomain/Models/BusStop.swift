@@ -1,3 +1,5 @@
+import Foundation
+
 public struct BusStop: Equatable, Hashable, Identifiable, Sendable {
   public let id: Int
   public let name: String

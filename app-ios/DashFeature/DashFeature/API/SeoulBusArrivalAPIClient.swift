@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import DashDomain
 
 public struct SeoulBusArrivalAPIClient: Sendable {
   public var fetchArrival: @Sendable (

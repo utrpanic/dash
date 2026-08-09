@@ -1,3 +1,5 @@
+import DashDomain
+
 struct SeoulBusRouteDTO: Equatable, Sendable {
   let id: Int
   let number: String

@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import DashDomain
 
 @Reducer
 struct AddBusStopFeature {

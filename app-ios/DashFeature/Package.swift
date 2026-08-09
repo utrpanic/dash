@@ -8,6 +8,10 @@ let package = Package(
   platforms: [.iOS(.v26)],
   products: [
     .library(
+      name: "DashDomain",
+      targets: ["DashDomain"]
+    ),
+    .library(
       name: "DashFeature",
       targets: ["DashFeature"]
     ),
@@ -15,8 +19,13 @@ let package = Package(
   dependencies: [ .package(path: "../DashPlatform") ],
   targets: [
     .target(
+      name: "DashDomain",
+      path: "DashDomain"
+    ),
+    .target(
       name: "DashFeature",
       dependencies: [
+        "DashDomain",
         .product(name: "DashPlatform", package: "DashPlatform")
       ],
       path: "DashFeature",

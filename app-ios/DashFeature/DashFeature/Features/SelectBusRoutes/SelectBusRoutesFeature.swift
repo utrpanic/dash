@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import DashDomain
 import Foundation
 
 @Reducer

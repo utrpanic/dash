@@ -1,4 +1,5 @@
 import SwiftUI
+import DashDomain
 
 struct BoardingPointView: View {
   let upcomingBuses: [UpcomingBus]

@@ -1,3 +1,4 @@
+import DashDomain
 import Foundation
 
 extension Array where Element == UpcomingBus {
