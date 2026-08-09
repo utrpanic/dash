@@ -32,6 +32,18 @@ struct DashApp: App {
           save: { configuration in
             try await boardingPointRepository.saveConfiguration(configuration)
           }
+        ),
+        gyeonggiBusArrivalAPIClient: GyeonggiBusArrivalAPIClient(
+          api: GyeonggiBusArrivalAPIService.liveValue
+        ),
+        gyeonggiBusStationAPIClient: GyeonggiBusStationAPIClient(
+          api: GyeonggiBusStationAPIService.liveValue
+        ),
+        seoulBusArrivalAPIClient: SeoulBusArrivalAPIClient(
+          api: SeoulBusArrivalAPIService.liveValue
+        ),
+        seoulBusStationAPIClient: SeoulBusStationAPIClient(
+          api: SeoulBusStationAPIService.liveValue
         )
       )
     }

@@ -45,6 +45,7 @@ let package = Package(
     .testTarget(
       name: "DashFeatureTests",
       dependencies: [
+        "DashData",
         "DashFeature"
       ],
       path: "DashFeatureTests"

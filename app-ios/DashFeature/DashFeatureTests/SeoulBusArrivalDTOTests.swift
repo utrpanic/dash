@@ -1,4 +1,5 @@
 import Testing
+@testable import DashData
 @testable import DashFeature
 
 @Test func seoulBusArrivalUsesRouteAbbreviationForDisplay() throws {

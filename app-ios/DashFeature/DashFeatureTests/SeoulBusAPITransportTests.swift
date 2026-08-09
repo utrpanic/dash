@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import DashData
 @testable import DashFeature
 
 @Test func seoulBusAPIJSONParserParsesItemList() throws {

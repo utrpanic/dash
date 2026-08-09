@@ -63,15 +63,6 @@ enum SeoulBusAPITransport {
     return apiResponse
   }
 
-  static func serviceKey() throws -> String {
-    let serviceKey = Secrets.serviceKey.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !serviceKey.isEmpty else {
-      throw SeoulBusAPIError.missingServiceKey
-    }
-
-    return serviceKey
-  }
-
   private static func percentEncodedQueryValue(_ value: String) -> String {
     if value.contains("%") {
       return value

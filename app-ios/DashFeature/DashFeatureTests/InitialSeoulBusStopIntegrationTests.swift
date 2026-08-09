@@ -1,4 +1,5 @@
 import Testing
+import DashData
 @testable import DashFeature
 
 private let initialSeoulStops: [BusStop] = [
@@ -8,9 +9,10 @@ private let initialSeoulStops: [BusStop] = [
 
 @Suite struct InitialSeoulBusStopIntegrationTests {
   @Test func initialSeoulStopsUseVerifiedARSIDs() async throws {
+    let api = SeoulBusStationAPIService.liveValue
     for stop in initialSeoulStops {
       let arsID = try seoulARSID(for: stop)
-      let routes = try await SeoulBusStationAPIClient.liveValue.fetchRoutes(arsID)
+      let routes = try await api.fetchRoutes(arsID)
 
       #expect(routes.contains(.route662))
     }

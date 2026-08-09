@@ -4,13 +4,23 @@ import SwiftUI
 public struct DashFeatureView: View {
   @Bindable private var store: StoreOf<DashFeature>
 
-  public init(boardingPointRepository: BoardingPointRepositoryClient) {
+  public init(
+    boardingPointRepository: BoardingPointRepositoryClient,
+    gyeonggiBusArrivalAPIClient: GyeonggiBusArrivalAPIClient,
+    gyeonggiBusStationAPIClient: GyeonggiBusStationAPIClient,
+    seoulBusArrivalAPIClient: SeoulBusArrivalAPIClient,
+    seoulBusStationAPIClient: SeoulBusStationAPIClient
+  ) {
     self.store = Store(
       initialState: DashFeature.State()
     ) {
       DashFeature()
     } withDependencies: {
       $0.boardingPointRepository = boardingPointRepository
+      $0.gyeonggiBusArrivalAPIClient = gyeonggiBusArrivalAPIClient
+      $0.gyeonggiBusStationAPIClient = gyeonggiBusStationAPIClient
+      $0.seoulBusArrivalAPIClient = seoulBusArrivalAPIClient
+      $0.seoulBusStationAPIClient = seoulBusStationAPIClient
     }
   }
 
@@ -47,6 +57,10 @@ public struct DashFeatureView: View {
         )
       },
       save: { _ in }
-    )
+    ),
+    gyeonggiBusArrivalAPIClient: .testValue,
+    gyeonggiBusStationAPIClient: .testValue,
+    seoulBusArrivalAPIClient: .testValue,
+    seoulBusStationAPIClient: .testValue
   )
 }
