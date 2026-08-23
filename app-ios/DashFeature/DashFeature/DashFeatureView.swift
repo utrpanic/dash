@@ -48,7 +48,12 @@ public struct DashFeatureView: View {
     boardingPointRepository: BoardingPointRepositoryClient(
       load: {
         BoardingPointConfiguration(
-          boardingPoints: .mock,
+          boardingPoints: [
+            .suwonStation,
+            .homaesilSsangyongApartment,
+            .yeongdeungpoStation,
+            .theHyundaiSeoul,
+          ],
           currentBoardingPointID: BoardingPoint.suwonStation.id
         )
       },

@@ -214,7 +214,12 @@ private struct BoardingPointRowView: View {
     BoardingPointsView(
       store: Store(
         initialState: BoardingPointsFeature.State(
-          boardingPoints: .mock,
+          boardingPoints: [
+            .suwonStation,
+            .homaesilSsangyongApartment,
+            .yeongdeungpoStation,
+            .theHyundaiSeoul,
+          ],
           selectedBoardingPointID: BoardingPoint.suwonStation.id
         )
       ) {

@@ -365,7 +365,32 @@ private extension CurrentBoardingPointFeature.State {
     var state = Self()
     state.boardingPointSelection = .selected(BoardingPoint.suwonStation.id)
     state.hasRequestedInitialLocation = true
-    state.upcomingBuses = .mock
+    state.upcomingBuses = [
+      UpcomingBus(
+        boardingPoint: .suwonStation,
+        busStop: .suwonStationExit7Outer,
+        busRoute: .route13,
+        timeIntervalUntilArrival: 2 * 60
+      ),
+      UpcomingBus(
+        boardingPoint: .suwonStation,
+        busStop: .suwonStationExit7Outer,
+        busRoute: .route13_4,
+        timeIntervalUntilArrival: 7 * 60
+      ),
+      UpcomingBus(
+        boardingPoint: .suwonStation,
+        busStop: .suwonStationExit7Inner,
+        busRoute: .route13_1,
+        timeIntervalUntilArrival: 12 * 60
+      ),
+      UpcomingBus(
+        boardingPoint: .suwonStation,
+        busStop: .suwonStationExit7Inner,
+        busRoute: .route13_5,
+        timeIntervalUntilArrival: 26 * 60
+      ),
+    ]
     state.lastUpdatedAt = .now.addingTimeInterval(-12)
     return state
   }
