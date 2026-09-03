@@ -7,7 +7,8 @@ public struct DashFeatureView: View {
   public init(
     boardingPointRepository: BoardingPointRepositoryClient,
     busArrivalRepository: any BusArrivalRepository,
-    busRouteRepository: any BusRouteRepository
+    busRouteRepository: any BusRouteRepository,
+    busStopRepository: any BusStopRepository
   ) {
     self.store = Store(
       initialState: DashFeature.State()
@@ -17,6 +18,7 @@ public struct DashFeatureView: View {
       $0.boardingPointRepository = boardingPointRepository
       $0.busArrivalRepository = busArrivalRepository
       $0.busRouteRepository = busRouteRepository
+      $0.busStopRepository = busStopRepository
     }
   }
 
@@ -60,6 +62,7 @@ public struct DashFeatureView: View {
       save: { _ in }
     ),
     busArrivalRepository: EmptyBusArrivalRepository(),
-    busRouteRepository: EmptyBusRouteRepository()
+    busRouteRepository: EmptyBusRouteRepository(),
+    busStopRepository: EmptyBusStopRepository()
   )
 }

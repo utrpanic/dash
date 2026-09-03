@@ -34,7 +34,8 @@ struct DashApp: App {
           }
         ),
         busArrivalRepository: LiveBusArrivalRepository.liveValue,
-        busRouteRepository: LiveBusRouteRepository.liveValue
+        busRouteRepository: LiveBusRouteRepository.liveValue,
+        busStopRepository: LiveBusStopRepository.liveValue
       )
     }
   }

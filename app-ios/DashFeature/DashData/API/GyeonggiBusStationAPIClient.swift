@@ -1,3 +1,4 @@
+import DashDomain
 import Foundation
 
 public struct GyeonggiBusStationAPIService: Sendable {
@@ -15,6 +16,20 @@ public struct GyeonggiBusStationAPIService: Sendable {
     )
     return responseDTO.response.msgBody?.busRouteList.values ?? []
   }
+
+  public func searchStops(matching keyword: String) async throws -> [BusStop] {
+    let response: GyeonggiBusStopListResponseDTO = try await fetch(
+      .stationList(keyword: keyword, serviceKey: serviceKey())
+    )
+    return response.stops()
+  }
+
+  public func fetchNearbyStops(latitude: Double, longitude: Double) async throws -> [BusStop] {
+    let response: GyeonggiBusStopAroundListResponseDTO = try await fetch(
+      .stationAroundList(latitude: latitude, longitude: longitude, serviceKey: serviceKey())
+    )
+    return response.stops()
+  }
 }
 
 public enum GyeonggiBusStationAPIError: Error, Equatable, Sendable {
@@ -27,17 +42,37 @@ public enum GyeonggiBusStationAPIError: Error, Equatable, Sendable {
 
 private enum GyeonggiBusStationAPIRequest {
   case viaRouteList(stationId: Int, serviceKey: String)
+  case stationList(keyword: String, serviceKey: String)
+  case stationAroundList(latitude: Double, longitude: Double, serviceKey: String)
 
   func url() throws -> URL {
     var components = URLComponents()
     components.scheme = "https"
     components.host = "apis.data.go.kr"
-    components.path = "/6410000/busstationservice/v2/getBusStationViaRouteListv2"
-    components.percentEncodedQuery = [
-      "serviceKey=\(percentEncodedQueryValue(serviceKey))",
-      "stationId=\(stationId)",
-      "format=json"
-    ].joined(separator: "&")
+    switch self {
+    case .viaRouteList:
+      components.path = "/6410000/busstationservice/v2/getBusStationViaRouteListv2"
+      components.percentEncodedQuery = [
+        "serviceKey=\(percentEncodedQueryValue(serviceKey))",
+        "stationId=\(stationId)",
+        "format=json"
+      ].joined(separator: "&")
+    case .stationList:
+      components.path = "/6410000/busstationservice/v2/getBusStationListv2"
+      components.percentEncodedQuery = [
+        "serviceKey=\(percentEncodedQueryValue(serviceKey))",
+        "keyword=\(percentEncodedQueryValue(keyword))",
+        "format=json"
+      ].joined(separator: "&")
+    case .stationAroundList:
+      components.path = "/6410000/busstationservice/v2/getBusStationAroundListv2"
+      components.percentEncodedQuery = [
+        "serviceKey=\(percentEncodedQueryValue(serviceKey))",
+        "x=\(longitude)",
+        "y=\(latitude)",
+        "format=json"
+      ].joined(separator: "&")
+    }
 
     guard let url = components.url else {
       throw GyeonggiBusStationAPIError.invalidURL
@@ -50,12 +85,31 @@ private enum GyeonggiBusStationAPIRequest {
     switch self {
     case let .viaRouteList(stationId, _):
       stationId
+    case .stationList, .stationAroundList:
+      0
     }
+  }
+
+  private var keyword: String {
+    if case let .stationList(keyword, _) = self { return keyword }
+    return ""
+  }
+
+  private var latitude: Double {
+    if case let .stationAroundList(latitude, _, _) = self { return latitude }
+    return 0
+  }
+
+  private var longitude: Double {
+    if case let .stationAroundList(_, longitude, _) = self { return longitude }
+    return 0
   }
 
   private var serviceKey: String {
     switch self {
     case let .viaRouteList(_, serviceKey):
+      serviceKey
+    case let .stationList(_, serviceKey), let .stationAroundList(_, _, serviceKey):
       serviceKey
     }
   }
