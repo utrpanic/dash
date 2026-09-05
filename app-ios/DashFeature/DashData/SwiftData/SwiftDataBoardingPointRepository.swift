@@ -3,6 +3,11 @@ import SwiftData
 
 @ModelActor
 public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
+  private typealias BoardingPointConfigurationRecord = DashDataSchemaV2.BoardingPointConfigurationRecord
+  private typealias BoardingPointRecord = DashDataSchemaV2.BoardingPointRecord
+  private typealias BoardingPointStopRecord = DashDataSchemaV2.BoardingPointStopRecord
+  private typealias SelectedRouteRecord = DashDataSchemaV2.SelectedRouteRecord
+
   private static let configurationID = "boarding-point-configuration"
 
   public func loadConfiguration() throws -> BoardingPointConfiguration {
@@ -15,7 +20,7 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
       try modelContext.save()
       return configuration
     }
-    return configuration(from: record)
+    return try configuration(from: record)
   }
 
   public func saveConfiguration(_ configuration: BoardingPointConfiguration) throws {
@@ -32,8 +37,8 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
 
   private func configuration(
     from record: BoardingPointConfigurationRecord
-  ) -> BoardingPointConfiguration {
-    BoardingPointConfiguration(
+  ) throws -> BoardingPointConfiguration {
+    try BoardingPointConfiguration(
       boardingPoints: record.boardingPoints
         .sorted { $0.sortIndex < $1.sortIndex }
         .map(boardingPoint(from:)),
@@ -41,12 +46,12 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
     )
   }
 
-  private func boardingPoint(from record: BoardingPointRecord) -> BoardingPoint {
+  private func boardingPoint(from record: BoardingPointRecord) throws -> BoardingPoint {
     let routes = Dictionary(
-      uniqueKeysWithValues: record.stops.map { stop in
+      uniqueKeysWithValues: try record.stops.map { stop in
         (
           BusStop(
-            id: busStopID(from: stop),
+            id: try busStopID(from: stop),
             name: stop.name,
             alias: stop.alias,
             latitude: stop.latitude,
@@ -59,9 +64,18 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
     return BoardingPoint(id: record.id, name: record.name, routes: routes)
   }
 
-  private func busStopID(from record: BoardingPointStopRecord) -> BusStop.ID {
-    BusStop.allKnown.first { $0.id.stopID == record.busStopID }?.id
-      ?? .gyeonggi(stopID: record.busStopID)
+  private func busStopID(from record: BoardingPointStopRecord) throws -> BusStop.ID {
+    switch record.region {
+    case "gyeonggi":
+      return .gyeonggi(stopID: record.busStopID)
+    case "seoul":
+      guard let arsID = record.arsID else {
+        throw BusStopPersistenceError.invalidIdentity(record.id)
+      }
+      return .seoul(stopID: record.busStopID, arsID: arsID)
+    default:
+      throw BusStopPersistenceError.invalidIdentity(record.id)
+    }
   }
 
   private var initialConfiguration: BoardingPointConfiguration {
@@ -102,6 +116,18 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
         BoardingPointStopRecord(
           id: "\(boardingPoint.id)-\(stop.id.storageKey)",
           busStopID: stop.id.stopID,
+          region: {
+            switch stop.id {
+            case .gyeonggi: "gyeonggi"
+            case .seoul: "seoul"
+            }
+          }(),
+          arsID: {
+            switch stop.id {
+            case .gyeonggi: nil
+            case let .seoul(_, arsID): arsID
+            }
+          }(),
           name: stop.name,
           alias: stop.alias,
           latitude: stop.latitude,
@@ -132,100 +158,4 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
       stops: stops
     )
   }
-}
-
-@Model
-private final class BoardingPointConfigurationRecord {
-  @Attribute(.unique) var id: String
-  var currentBoardingPointID: String?
-  @Relationship(deleteRule: .cascade) var boardingPoints: [BoardingPointRecord]
-
-  init(
-    id: String,
-    currentBoardingPointID: String?,
-    boardingPoints: [BoardingPointRecord]
-  ) {
-    self.id = id
-    self.currentBoardingPointID = currentBoardingPointID
-    self.boardingPoints = boardingPoints
-  }
-}
-
-@Model
-private final class BoardingPointRecord {
-  @Attribute(.unique) var id: String
-  var name: String
-  var sortIndex: Int
-  @Relationship(deleteRule: .cascade) var stops: [BoardingPointStopRecord]
-
-  init(
-    id: String,
-    name: String,
-    sortIndex: Int,
-    stops: [BoardingPointStopRecord]
-  ) {
-    self.id = id
-    self.name = name
-    self.sortIndex = sortIndex
-    self.stops = stops
-  }
-}
-
-@Model
-private final class BoardingPointStopRecord {
-  @Attribute(.unique) var id: String
-  var busStopID: Int
-  var name: String
-  var alias: String?
-  var latitude: Double
-  var longitude: Double
-  @Relationship(deleteRule: .cascade) var selectedRoutes: [SelectedRouteRecord]
-
-  init(
-    id: String,
-    busStopID: Int,
-    name: String,
-    alias: String?,
-    latitude: Double,
-    longitude: Double,
-    selectedRoutes: [SelectedRouteRecord]
-  ) {
-    self.id = id
-    self.busStopID = busStopID
-    self.name = name
-    self.alias = alias
-    self.latitude = latitude
-    self.longitude = longitude
-    self.selectedRoutes = selectedRoutes
-  }
-}
-
-@Model
-private final class SelectedRouteRecord {
-  @Attribute(.unique) var id: String
-  var routeID: Int
-  var number: String
-  var region: String
-
-  init(id: String, routeID: Int, number: String, region: String) {
-    self.id = id
-    self.routeID = routeID
-    self.number = number
-    self.region = region
-  }
-}
-
-public enum DashDataSchemaV1: VersionedSchema {
-  public static let versionIdentifier = Schema.Version(1, 0, 0)
-  public static let models: [any PersistentModel.Type] = [
-    BoardingPointConfigurationRecord.self,
-    BoardingPointRecord.self,
-    BoardingPointStopRecord.self,
-    SelectedRouteRecord.self,
-  ]
-}
-
-public enum DashDataMigrationPlan: SchemaMigrationPlan {
-  public static let schemas: [any VersionedSchema.Type] = [DashDataSchemaV1.self]
-  public static let stages: [MigrationStage] = []
 }
