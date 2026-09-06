@@ -20,9 +20,10 @@ struct EditBoardingPointView: View {
               nameSection
               busStopsSection
 
-              Spacer(minLength: r.dimen.primaryButtonHeight)
-
-              deleteBoardingPointButton
+              if !store.isCreatingBoardingPoint {
+                Spacer(minLength: r.dimen.primaryButtonHeight)
+                deleteBoardingPointButton
+              }
             }
             .padding(.vertical, r.dimen.spacingLarge)
             .frame(minHeight: proxy.size.height, alignment: .top)
@@ -35,7 +36,7 @@ struct EditBoardingPointView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .principal) {
-        Text("탑승 지점 편집")
+        Text(store.isCreatingBoardingPoint ? "탑승 지점 추가" : "탑승 지점 편집")
           .font(r.font.screenTitle)
           .foregroundStyle(r.color.textPrimary)
       }

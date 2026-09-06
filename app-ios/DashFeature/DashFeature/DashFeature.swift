@@ -2,6 +2,8 @@ import ComposableArchitecture
 
 @Reducer
 struct DashFeature {
+  @Dependency(\.uuid) var uuid
+
   @ObservableState
   struct State: Equatable {
     var currentBoardingPoint: CurrentBoardingPointFeature.State
@@ -77,6 +79,29 @@ struct DashFeature {
             EditBoardingPointFeature.State(
               boardingPoint: boardingPoint,
               canDeleteBoardingPoint: state.currentBoardingPoint.boardingPoints.count > 1
+            )
+          )
+        )
+        return .none
+
+      case .path(
+        .element(
+          id: _,
+          action: .boardingPoints(
+            .delegate(.addBoardingPointRequested)
+          )
+        )
+      ):
+        state.path.append(
+          .editBoardingPoint(
+            EditBoardingPointFeature.State(
+              boardingPoint: BoardingPoint(
+                id: uuid().uuidString.lowercased(),
+                name: "",
+                routes: [:]
+              ),
+              canDeleteBoardingPoint: false,
+              isCreatingBoardingPoint: true
             )
           )
         )
@@ -222,9 +247,21 @@ struct DashFeature {
         )
       ):
         state.path.removeLast()
-        return .send(
-          .currentBoardingPoint(
-            .boardingPointUpdated(boardingPoint)
+        let currentBoardingPointEffect: Effect<Action> = .send(
+          .currentBoardingPoint(.boardingPointUpdated(boardingPoint))
+        )
+        guard let boardingPointsID = state.path.ids.last else {
+          return currentBoardingPointEffect
+        }
+        return .merge(
+          currentBoardingPointEffect,
+          .send(
+            .path(
+              .element(
+                id: boardingPointsID,
+                action: .boardingPoints(.boardingPointUpdated(boardingPoint))
+              )
+            )
           )
         )
         

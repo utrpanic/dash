@@ -23,6 +23,7 @@ struct BoardingPointsFeature {
     case addButtonTapped
     case boardingPointTapped(BoardingPoint.ID)
     case boardingPointDeleted(BoardingPoint.ID)
+    case boardingPointUpdated(BoardingPoint)
     case deleteButtonTapped(BoardingPoint.ID)
     case deleteConfirmationCancelled
     case deleteConfirmationConfirmed
@@ -60,6 +61,14 @@ struct BoardingPointsFeature {
         state.boardingPoints.removeAll { $0.id == boardingPointID }
         if state.selectedBoardingPointID == boardingPointID {
           state.selectedBoardingPointID = nil
+        }
+        return .none
+
+      case let .boardingPointUpdated(boardingPoint):
+        if let index = state.boardingPoints.firstIndex(where: { $0.id == boardingPoint.id }) {
+          state.boardingPoints[index] = boardingPoint
+        } else {
+          state.boardingPoints.append(boardingPoint)
         }
         return .none
 

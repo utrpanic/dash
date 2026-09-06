@@ -11,16 +11,19 @@ struct EditBoardingPointFeature {
 
     var boardingPoint: BoardingPoint
     var canDeleteBoardingPoint: Bool
+    var isCreatingBoardingPoint: Bool
     var name: String
     var routes: [BusStop: Set<BusRoute>]
     var deleteConfirmation: DeleteConfirmation?
 
     init(
       boardingPoint: BoardingPoint,
-      canDeleteBoardingPoint: Bool = true
+      canDeleteBoardingPoint: Bool = true,
+      isCreatingBoardingPoint: Bool = false
     ) {
       self.boardingPoint = boardingPoint
       self.canDeleteBoardingPoint = canDeleteBoardingPoint
+      self.isCreatingBoardingPoint = isCreatingBoardingPoint
       self.name = boardingPoint.name
       self.routes = boardingPoint.routes
       self.deleteConfirmation = nil

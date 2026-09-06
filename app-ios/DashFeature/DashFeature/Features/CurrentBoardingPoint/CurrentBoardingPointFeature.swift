@@ -17,6 +17,8 @@ struct CurrentBoardingPointFeature: Sendable {
     var boardingPoints: [BoardingPoint]
     var boardingPointSelection: BoardingPointSelection
     var configurationLoadErrorMessage: String?
+    var configurationSaveErrorMessage: String?
+    var configurationSaveInFlight: BoardingPointConfiguration?
     var hasLoadedConfiguration: Bool
     var hasRequestedInitialLocation: Bool
     var isLoadingConfiguration: Bool
@@ -25,11 +27,14 @@ struct CurrentBoardingPointFeature: Sendable {
     var isLoadingUpcomingBuses: Bool
     var upcomingBusesErrorMessage: String?
     var lastUpdatedAt: Date?
+    var pendingConfigurationSave: BoardingPointConfiguration?
 
     init() {
       self.boardingPoints = []
       self.boardingPointSelection = .locating
       self.configurationLoadErrorMessage = nil
+      self.configurationSaveErrorMessage = nil
+      self.configurationSaveInFlight = nil
       self.hasLoadedConfiguration = false
       self.hasRequestedInitialLocation = false
       self.isLoadingConfiguration = false
@@ -38,6 +43,7 @@ struct CurrentBoardingPointFeature: Sendable {
       self.isLoadingUpcomingBuses = false
       self.upcomingBusesErrorMessage = nil
       self.lastUpdatedAt = nil
+      self.pendingConfigurationSave = nil
     }
 
     var selectedBoardingPointID: BoardingPoint.ID? {
@@ -68,11 +74,14 @@ struct CurrentBoardingPointFeature: Sendable {
     case editButtonTapped
     case listButtonTapped
     case configurationLoadResponse(ConfigurationLoadResponse)
+    case configurationSaveErrorDismissed
+    case configurationSaveResponse(ConfigurationSaveResponse)
     case loadUpcomingBuses
     case loadUpcomingBusesResponse(UpcomingBusesResponse)
     case locationButtonTapped
     case nextBoardingPointButtonTapped
     case refreshButtonTapped
+    case retryConfigurationSaveButtonTapped
     case boardingPointSelected(BoardingPoint.ID)
     case boardingPointDeleted(BoardingPoint.ID)
     case boardingPointUpdated(BoardingPoint)
@@ -95,6 +104,11 @@ struct CurrentBoardingPointFeature: Sendable {
   enum ConfigurationLoadResponse: Equatable {
     case success(BoardingPointConfiguration)
     case failure(String)
+  }
+
+  enum ConfigurationSaveResponse: Equatable {
+    case success
+    case failure
   }
 
   enum UpcomingBusesResponse: Equatable {
@@ -140,6 +154,20 @@ struct CurrentBoardingPointFeature: Sendable {
         state.isLoadingConfiguration = false
         state.configurationLoadErrorMessage = message
         state.boardingPointSelection = .locationUnavailable
+        return .none
+
+      case .configurationSaveErrorDismissed:
+        state.configurationSaveErrorMessage = nil
+        return .none
+
+      case .configurationSaveResponse(.success):
+        state.configurationSaveInFlight = nil
+        return startPendingConfigurationSave(state: &state)
+
+      case .configurationSaveResponse(.failure):
+        state.configurationSaveInFlight = nil
+        state.pendingConfigurationSave = configuration(from: state)
+        state.configurationSaveErrorMessage = "변경사항을 저장하지 못했습니다. 다시 시도해주세요."
         return .none
 
       case .editButtonTapped:
@@ -247,6 +275,13 @@ struct CurrentBoardingPointFeature: Sendable {
       case .refreshButtonTapped:
         return .send(.loadUpcomingBuses)
 
+      case .retryConfigurationSaveButtonTapped:
+        state.configurationSaveErrorMessage = nil
+        if state.pendingConfigurationSave == nil {
+          state.pendingConfigurationSave = configuration(from: state)
+        }
+        return startPendingConfigurationSave(state: &state)
+
       case let .boardingPointSelected(boardingPointID):
         if boardingPointID != state.selectedBoardingPointID {
           state.lastUpdatedAt = nil
@@ -261,8 +296,9 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
         state.boardingPoints.removeAll { $0.id == boardingPointID }
+        let saveEffect = enqueueConfigurationSave(state: &state)
         guard state.selectedBoardingPointID == boardingPointID else {
-          return .none
+          return saveEffect
         }
 
         state.upcomingBuses = []
@@ -273,26 +309,37 @@ struct CurrentBoardingPointFeature: Sendable {
 
         guard !state.boardingPoints.isEmpty else {
           state.boardingPointSelection = .locationUnavailable
-          return .cancel(id: CancelID.loadUpcomingBuses)
+          return .merge(
+            saveEffect,
+            .cancel(id: CancelID.loadUpcomingBuses)
+          )
         }
 
         state.boardingPointSelection = .locating
         state.hasRequestedInitialLocation = false
-        return .concatenate(
-          .cancel(id: CancelID.loadUpcomingBuses),
-          .send(.task)
+        return .merge(
+          saveEffect,
+          .concatenate(
+            .cancel(id: CancelID.loadUpcomingBuses),
+            .send(.task)
+          )
         )
 
       case let .boardingPointUpdated(boardingPoint):
-        guard let index = state.boardingPoints.firstIndex(where: { $0.id == boardingPoint.id }) else {
-          return .none
+        if let index = state.boardingPoints.firstIndex(where: { $0.id == boardingPoint.id }) {
+          state.boardingPoints[index] = boardingPoint
+        } else {
+          state.boardingPoints.append(boardingPoint)
         }
-        state.boardingPoints[index] = boardingPoint
+        let saveEffect = enqueueConfigurationSave(state: &state)
         guard boardingPoint.id == state.selectedBoardingPointID else {
-          return .none
+          return saveEffect
         }
         state.lastUpdatedAt = nil
-        return .send(.loadUpcomingBuses)
+        return .merge(
+          saveEffect,
+          .send(.loadUpcomingBuses)
+        )
 
       case let .setCurrentBoardingPoint(boardingPoint):
         state.boardingPointSelection = .selected(boardingPoint.id)
@@ -379,6 +426,43 @@ struct CurrentBoardingPointFeature: Sendable {
 }
 
 private extension CurrentBoardingPointFeature {
+  func configuration(from state: State) -> BoardingPointConfiguration {
+    BoardingPointConfiguration(
+      boardingPoints: state.boardingPoints,
+      currentBoardingPointID: state.selectedBoardingPointID
+    )
+  }
+
+  func enqueueConfigurationSave(state: inout State) -> Effect<Action> {
+    state.pendingConfigurationSave = configuration(from: state)
+    guard state.configurationSaveInFlight == nil,
+          state.configurationSaveErrorMessage == nil
+    else {
+      return .none
+    }
+    return startPendingConfigurationSave(state: &state)
+  }
+
+  func startPendingConfigurationSave(state: inout State) -> Effect<Action> {
+    guard state.configurationSaveInFlight == nil,
+          let configuration = state.pendingConfigurationSave
+    else {
+      return .none
+    }
+
+    state.pendingConfigurationSave = nil
+    state.configurationSaveInFlight = configuration
+    let saveConfiguration = boardingPointRepository.saveConfiguration
+    return .run { send in
+      do {
+        try await saveConfiguration(configuration)
+        await send(.configurationSaveResponse(.success))
+      } catch {
+        await send(.configurationSaveResponse(.failure))
+      }
+    }
+  }
+
   static func nearestBoardingPointID(
     to location: UserLocation,
     in boardingPoints: [BoardingPoint]

@@ -42,6 +42,26 @@ public struct DashFeatureView: View {
         SelectBusRoutesView(store: store)
       }
     }
+    .alert(
+      "변경사항을 저장하지 못했습니다",
+      isPresented: Binding(
+        get: { store.currentBoardingPoint.configurationSaveErrorMessage != nil },
+        set: { isPresented in
+          if !isPresented {
+            store.send(.currentBoardingPoint(.configurationSaveErrorDismissed))
+          }
+        }
+      )
+    ) {
+      Button("나중에", role: .cancel) {
+        store.send(.currentBoardingPoint(.configurationSaveErrorDismissed))
+      }
+      Button("다시 시도") {
+        store.send(.currentBoardingPoint(.retryConfigurationSaveButtonTapped))
+      }
+    } message: {
+      Text(store.currentBoardingPoint.configurationSaveErrorMessage ?? "")
+    }
   }
 }
 
