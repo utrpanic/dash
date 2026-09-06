@@ -9,11 +9,8 @@ struct DashApp: App {
 
   init() {
     do {
-      let schema = Schema(versionedSchema: DashDataSchemaV2.self)
-      let modelContainer = try ModelContainer(
-        for: schema,
-        migrationPlan: DashDataMigrationPlan.self
-      )
+      let schema = Schema(versionedSchema: DashDataSchemaV1.self)
+      let modelContainer = try ModelContainer(for: schema)
       self.boardingPointRepository = SwiftDataBoardingPointRepository(
         modelContainer: modelContainer
       )

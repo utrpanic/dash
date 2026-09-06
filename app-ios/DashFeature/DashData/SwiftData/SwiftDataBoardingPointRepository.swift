@@ -3,10 +3,10 @@ import SwiftData
 
 @ModelActor
 public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
-  private typealias BoardingPointConfigurationRecord = DashDataSchemaV2.BoardingPointConfigurationRecord
-  private typealias BoardingPointRecord = DashDataSchemaV2.BoardingPointRecord
-  private typealias BoardingPointStopRecord = DashDataSchemaV2.BoardingPointStopRecord
-  private typealias SelectedRouteRecord = DashDataSchemaV2.SelectedRouteRecord
+  private typealias BoardingPointConfigurationRecord = DashDataSchemaV1.BoardingPointConfigurationRecord
+  private typealias BoardingPointRecord = DashDataSchemaV1.BoardingPointRecord
+  private typealias BoardingPointStopRecord = DashDataSchemaV1.BoardingPointStopRecord
+  private typealias SelectedRouteRecord = DashDataSchemaV1.SelectedRouteRecord
 
   private static let configurationID = "boarding-point-configuration"
 
@@ -158,4 +158,8 @@ public actor SwiftDataBoardingPointRepository: BoardingPointRepository {
       stops: stops
     )
   }
+}
+
+private enum BusStopPersistenceError: Error {
+  case invalidIdentity(String)
 }
