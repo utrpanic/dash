@@ -1,7 +1,10 @@
 import ComposableArchitecture
+import Foundation
 import Testing
 
 @testable import DashFeature
+
+private let selectionPolicyTestNow = Date(timeIntervalSinceReferenceDate: 1)
 
 private enum ConfigurationSaveTestError: Error {
   case failed
@@ -222,6 +225,199 @@ private actor ControlledConfigurationSaveRecorder {
     }
     await store.receive(.configurationSaveResponse(.success)) {
       $0.configurationSaveInFlight = nil
+      $0.persistedBoardingPointID = BoardingPoint.suwonStation.id
+    }
+
+    #expect(await recorder.savedConfigurations() == [configuration])
+  }
+
+  @MainActor
+  @Test func deletingSelectedBoardingPointDoesNotPersistDeletedID() async {
+    let recorder = ControlledConfigurationSaveRecorder()
+    let configuration = BoardingPointConfiguration(
+      boardingPoints: [.suwonStation],
+      currentBoardingPointID: nil
+    )
+    var initialState = CurrentBoardingPointFeature.State()
+    initialState.boardingPoints = [.suwonStation, .theHyundaiSeoul]
+    initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
+    initialState.hasLoadedConfiguration = true
+    initialState.persistedBoardingPointID = BoardingPoint.theHyundaiSeoul.id
+
+    let store = TestStore(initialState: initialState) {
+      CurrentBoardingPointFeature()
+    } withDependencies: {
+      $0.boardingPointRepository = BoardingPointRepositoryClient(
+        load: { BoardingPointConfiguration(boardingPoints: [], currentBoardingPointID: nil) },
+        save: { await recorder.save($0) }
+      )
+      $0.userLocationClient = UserLocationClient {
+        throw UserLocationError.locationUnavailable
+      }
+    }
+
+    await store.send(.boardingPointDeleted(BoardingPoint.theHyundaiSeoul.id)) {
+      $0.boardingPoints = [.suwonStation]
+      $0.boardingPointSelection = .locating
+      $0.configurationSaveInFlight = configuration
+      $0.persistedBoardingPointID = nil
+    }
+    await store.receive(.task) {
+      $0.hasRequestedInitialLocation = true
+      $0.isLoadingUpcomingBuses = true
+      $0.isRequestingUserLocation = true
+    }
+    await store.receive(.userLocationResponse(.unavailable)) {
+      $0.boardingPointSelection = .locationUnavailable
+      $0.isLoadingUpcomingBuses = false
+      $0.isRequestingUserLocation = false
+    }
+    await recorder.waitUntilSaveCount(1)
+    await recorder.completeNextSave()
+    await store.receive(.configurationSaveResponse(.success)) {
+      $0.configurationSaveInFlight = nil
+    }
+
+    #expect(await recorder.savedConfigurations() == [configuration])
+  }
+
+  @MainActor
+  @Test func launchLocationOverridesPersistedSelection() async {
+    let recorder = ControlledConfigurationSaveRecorder()
+    let loadedConfiguration = BoardingPointConfiguration(
+      boardingPoints: [.suwonStation, .theHyundaiSeoul],
+      currentBoardingPointID: BoardingPoint.theHyundaiSeoul.id
+    )
+    let locationConfiguration = BoardingPointConfiguration(
+      boardingPoints: [.suwonStation, .theHyundaiSeoul],
+      currentBoardingPointID: BoardingPoint.suwonStation.id
+    )
+
+    let store = TestStore(initialState: CurrentBoardingPointFeature.State()) {
+      CurrentBoardingPointFeature()
+    } withDependencies: {
+      $0.boardingPointRepository = BoardingPointRepositoryClient(
+        load: { loadedConfiguration },
+        save: { await recorder.save($0) }
+      )
+      $0.date.now = selectionPolicyTestNow
+      $0.userLocationClient = UserLocationClient {
+        UserLocation(
+          latitude: BoardingPoint.suwonStation.centerLatitude!,
+          longitude: BoardingPoint.suwonStation.centerLongitude!
+        )
+      }
+    }
+
+    await store.send(.configurationLoadResponse(.success(loadedConfiguration))) {
+      $0.boardingPoints = loadedConfiguration.boardingPoints
+      $0.hasLoadedConfiguration = true
+      $0.persistedBoardingPointID = BoardingPoint.theHyundaiSeoul.id
+    }
+    await store.receive(.task) {
+      $0.hasRequestedInitialLocation = true
+      $0.isLoadingUpcomingBuses = true
+      $0.isRequestingUserLocation = true
+    }
+    await store.receive(
+      .userLocationResponse(
+        .success(
+          UserLocation(
+            latitude: BoardingPoint.suwonStation.centerLatitude!,
+            longitude: BoardingPoint.suwonStation.centerLongitude!
+          )
+        )
+      )
+    ) {
+      $0.boardingPointSelection = .selected(BoardingPoint.suwonStation.id)
+      $0.configurationSaveInFlight = locationConfiguration
+      $0.isRequestingUserLocation = false
+    }
+    await store.receive(.loadUpcomingBuses)
+    await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+      $0.isLoadingUpcomingBuses = false
+      $0.lastUpdatedAt = selectionPolicyTestNow
+    }
+    await recorder.waitUntilSaveCount(1)
+    await recorder.completeNextSave()
+    await store.receive(.configurationSaveResponse(.success)) {
+      $0.configurationSaveInFlight = nil
+      $0.persistedBoardingPointID = BoardingPoint.suwonStation.id
+    }
+
+    #expect(await recorder.savedConfigurations() == [locationConfiguration])
+  }
+
+  @MainActor
+  @Test func launchFallsBackToPersistedSelectionWhenLocationIsDenied() async {
+    let loadedConfiguration = BoardingPointConfiguration(
+      boardingPoints: [.suwonStation, .theHyundaiSeoul],
+      currentBoardingPointID: BoardingPoint.theHyundaiSeoul.id
+    )
+
+    let store = TestStore(initialState: CurrentBoardingPointFeature.State()) {
+      CurrentBoardingPointFeature()
+    } withDependencies: {
+      $0.date.now = selectionPolicyTestNow
+      $0.userLocationClient = UserLocationClient {
+        throw UserLocationError.authorizationDenied
+      }
+    }
+
+    await store.send(.configurationLoadResponse(.success(loadedConfiguration))) {
+      $0.boardingPoints = loadedConfiguration.boardingPoints
+      $0.hasLoadedConfiguration = true
+      $0.persistedBoardingPointID = BoardingPoint.theHyundaiSeoul.id
+    }
+    await store.receive(.task) {
+      $0.hasRequestedInitialLocation = true
+      $0.isLoadingUpcomingBuses = true
+      $0.isRequestingUserLocation = true
+    }
+    await store.receive(.userLocationResponse(.authorizationDenied)) {
+      $0.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
+      $0.isRequestingUserLocation = false
+    }
+    await store.receive(.loadUpcomingBuses)
+    await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+      $0.isLoadingUpcomingBuses = false
+      $0.lastUpdatedAt = selectionPolicyTestNow
+    }
+  }
+
+  @MainActor
+  @Test func manualSelectionIsPersisted() async {
+    let recorder = ControlledConfigurationSaveRecorder()
+    let first = BoardingPoint(id: "first", name: "첫 번째", routes: [:])
+    let second = BoardingPoint(id: "second", name: "두 번째", routes: [:])
+    let configuration = BoardingPointConfiguration(
+      boardingPoints: [first, second],
+      currentBoardingPointID: second.id
+    )
+    var initialState = CurrentBoardingPointFeature.State()
+    initialState.boardingPoints = [first, second]
+    initialState.boardingPointSelection = .selected(first.id)
+    initialState.persistedBoardingPointID = first.id
+
+    let store = TestStore(initialState: initialState) {
+      CurrentBoardingPointFeature()
+    } withDependencies: {
+      $0.boardingPointRepository = BoardingPointRepositoryClient(
+        load: { BoardingPointConfiguration(boardingPoints: [], currentBoardingPointID: nil) },
+        save: { await recorder.save($0) }
+      )
+    }
+
+    await store.send(.setCurrentBoardingPoint(second)) {
+      $0.boardingPointSelection = .selected(second.id)
+      $0.configurationSaveInFlight = configuration
+    }
+    await store.receive(.loadUpcomingBuses)
+    await recorder.waitUntilSaveCount(1)
+    await recorder.completeNextSave()
+    await store.receive(.configurationSaveResponse(.success)) {
+      $0.configurationSaveInFlight = nil
+      $0.persistedBoardingPointID = second.id
     }
 
     #expect(await recorder.savedConfigurations() == [configuration])
