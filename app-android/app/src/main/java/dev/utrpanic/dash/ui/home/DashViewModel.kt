@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
 
-enum class DashDestination { HOME, BOARDING_POINTS, EDIT_BOARDING_POINT }
+enum class DashDestination { HOME, BOARDING_POINTS, EDIT_BOARDING_POINT, ADD_BUS_STOP }
 
 data class BoardingPointDraft(
     val originalId: String?,
@@ -39,6 +39,13 @@ data class DashUiState(
     val boardingPoints: List<BoardingPoint> = emptyList(),
     val draft: BoardingPointDraft? = null,
     val isSaving: Boolean = false,
+    val stopQuery: String = "",
+    val stopResults: List<dev.utrpanic.dash.domain.model.BusStop> = emptyList(),
+    val selectedStop: dev.utrpanic.dash.domain.model.BusStop? = null,
+    val selectedStopRoutes: List<dev.utrpanic.dash.domain.model.BusRoute> = emptyList(),
+    val isLoadingStops: Boolean = false,
+    val isLoadingStopRoutes: Boolean = false,
+    val stopSearchError: String? = null,
 )
 
 class DashViewModel(private val container: DashContainer) : ViewModel() {
@@ -50,6 +57,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
     private val _state = MutableStateFlow(DashUiState())
     val state: StateFlow<DashUiState> = _state.asStateFlow()
     private var refreshJob: Job? = null
+    private var stopSearchJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -178,6 +186,88 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
     fun removeDraftStop(stop: dev.utrpanic.dash.domain.model.BusStop) {
         _state.update { state ->
             state.copy(draft = state.draft?.copy(routes = state.draft.routes - stop))
+        }
+    }
+
+    fun openAddBusStop() {
+        _state.update {
+            it.copy(
+                destination = DashDestination.ADD_BUS_STOP,
+                stopQuery = "",
+                stopResults = emptyList(),
+                selectedStop = null,
+                selectedStopRoutes = emptyList(),
+                stopSearchError = null,
+            )
+        }
+        stopSearchJob?.cancel()
+        stopSearchJob = viewModelScope.launch {
+            _state.update { it.copy(isLoadingStops = true) }
+            runCatching {
+                val location = container.locationProvider.currentLocation()
+                container.busStopRepository.fetchNearbyStops(location.latitude, location.longitude).take(26)
+            }.onSuccess { stops ->
+                _state.update { it.copy(stopResults = stops, isLoadingStops = false) }
+            }.onFailure {
+                _state.update {
+                    it.copy(isLoadingStops = false, stopSearchError = "현재 위치의 정류장을 불러오지 못했습니다. 검색은 사용할 수 있습니다.")
+                }
+            }
+        }
+    }
+
+    fun returnToDraft() {
+        _state.update { it.copy(destination = DashDestination.EDIT_BOARDING_POINT) }
+    }
+
+    fun updateStopQuery(query: String) {
+        _state.update { it.copy(stopQuery = query, selectedStop = null, selectedStopRoutes = emptyList()) }
+        stopSearchJob?.cancel()
+        stopSearchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(350)
+            if (query.trim().isEmpty()) return@launch
+            _state.update { it.copy(isLoadingStops = true, stopSearchError = null) }
+            runCatching { container.busStopRepository.searchStops(query).take(26) }
+                .onSuccess { stops -> _state.update { it.copy(stopResults = stops, isLoadingStops = false) } }
+                .onFailure {
+                    _state.update {
+                        it.copy(isLoadingStops = false, stopSearchError = "정류장 정보를 불러오지 못했습니다.")
+                    }
+                }
+        }
+    }
+
+    fun selectStop(stop: dev.utrpanic.dash.domain.model.BusStop) {
+        _state.update {
+            it.copy(selectedStop = stop, selectedStopRoutes = emptyList(), isLoadingStopRoutes = true)
+        }
+        viewModelScope.launch {
+            runCatching { container.busRouteRepository.fetchRoutes(stop) }
+                .onSuccess { routes ->
+                    if (_state.value.selectedStop == stop) {
+                        _state.update { it.copy(selectedStopRoutes = routes, isLoadingStopRoutes = false) }
+                    }
+                }
+                .onFailure {
+                    if (_state.value.selectedStop == stop) {
+                        _state.update { it.copy(isLoadingStopRoutes = false) }
+                    }
+                }
+        }
+    }
+
+    fun retrySelectedStopRoutes() {
+        _state.value.selectedStop?.let(::selectStop)
+    }
+
+    fun addSelectedStop() {
+        val stop = _state.value.selectedStop ?: return
+        _state.update { state ->
+            val draft = state.draft ?: return@update state
+            state.copy(
+                draft = draft.copy(routes = if (stop in draft.routes) draft.routes else draft.routes + (stop to emptySet())),
+                destination = DashDestination.EDIT_BOARDING_POINT,
+            )
         }
     }
 

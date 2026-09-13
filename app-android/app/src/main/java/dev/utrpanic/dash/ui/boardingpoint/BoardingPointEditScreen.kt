@@ -47,6 +47,7 @@ fun BoardingPointEditScreen(
     onRemoveStop: (BusStop) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
+    onAddStop: () -> Unit,
 ) {
     if (draft == null) return
     var confirmingDelete by remember { mutableStateOf(false) }
@@ -94,7 +95,7 @@ fun BoardingPointEditScreen(
                 }
             }
             item {
-                TextButton(onClick = { }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                TextButton(onClick = onAddStop, modifier = Modifier.padding(horizontal = 8.dp)) {
                     Icon(Icons.Rounded.Add, null)
                     Text("정류장 추가")
                 }
