@@ -7,18 +7,18 @@
 1. `79145c1` — 현재 iOS 구현을 Source of truth로 삼아 제품·데이터·API·디자인 공유 명세를 최신화.
 2. `440f960` — Kotlin·Compose 기반 Android 초기 프로젝트를 추가하고 emulator 실행 확인.
 3. `58826f4` — 환경변수 또는 ignored properties를 입력으로 사용하는 단일 공통 secret 생성기와 Android Secrets Gradle Plugin, GitHub Actions 초안을 구성.
+4. [단계 1 완료] Android 기반 domain model과 repository interface를 공유 계약에 맞춰 구현하고 단위 테스트를 추가.
 
 ## 다음 단계
 
-1. Android 기반 구조와 공유 도메인 모델 구현.
-2. 서울·경기 API client와 실제 응답 기반 integration test 구현.
-3. Room 저장소와 의도된 초기 seed 구현.
-4. 현재 위치 기반 탑승 지점 선택 구현.
-5. 현재 탑승 지점 및 도착 정보 화면 구현.
-6. 탑승 지점 목록·편집 화면 구현.
-7. Google Maps 기반 정류장 검색·추가 화면 구현.
-8. 버스 노선 선택 화면 구현.
-9. 전체 흐름 계측 테스트와 마감.
+1. 서울·경기 API client와 실제 응답 기반 integration test 구현.
+2. Room 저장소와 의도된 초기 seed 구현.
+3. 현재 위치 기반 탑승 지점 선택 구현.
+4. 현재 탑승 지점 및 도착 정보 화면 구현.
+5. 탑승 지점 목록·편집 화면 구현.
+6. Google Maps 기반 정류장 검색·추가 화면 구현.
+7. 버스 노선 선택 화면 구현.
+8. 전체 흐름 계측 테스트와 마감.
 
 ## 보류
 
