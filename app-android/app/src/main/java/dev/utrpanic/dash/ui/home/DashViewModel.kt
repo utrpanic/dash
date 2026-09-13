@@ -17,6 +17,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.util.UUID
+
+enum class DashDestination { HOME, BOARDING_POINTS, EDIT_BOARDING_POINT }
+
+data class BoardingPointDraft(
+    val originalId: String?,
+    val name: String,
+    val routes: Map<dev.utrpanic.dash.domain.model.BusStop, Set<dev.utrpanic.dash.domain.model.BusRoute>>,
+)
 
 data class DashUiState(
     val isLoadingConfiguration: Boolean = true,
@@ -26,6 +35,10 @@ data class DashUiState(
     val errorMessage: String? = null,
     val lastUpdatedAt: Instant? = null,
     val now: Instant = Instant.now(),
+    val destination: DashDestination = DashDestination.HOME,
+    val boardingPoints: List<BoardingPoint> = emptyList(),
+    val draft: BoardingPointDraft? = null,
+    val isSaving: Boolean = false,
 )
 
 class DashViewModel(private val container: DashContainer) : ViewModel() {
@@ -56,6 +69,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                         it.copy(
                             isLoadingConfiguration = false,
                             currentBoardingPoint = resolution.boardingPoint,
+                            boardingPoints = container.boardingPointRepository.loadConfiguration().boardingPoints,
                         )
                     }
                     refresh()
@@ -105,6 +119,127 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
             )
             _state.update { it.copy(currentBoardingPoint = next, upcomingBuses = emptyList()) }
             refresh()
+        }
+    }
+
+    fun openBoardingPoints() {
+        viewModelScope.launch {
+            runCatching { container.boardingPointRepository.loadConfiguration() }
+                .onSuccess { configuration ->
+                    _state.update {
+                        it.copy(
+                            boardingPoints = configuration.boardingPoints,
+                            destination = DashDestination.BOARDING_POINTS,
+                            errorMessage = null,
+                        )
+                    }
+                }
+                .onFailure { _state.update { it.copy(errorMessage = "탑승 지점을 불러오지 못했습니다.") } }
+        }
+    }
+
+    fun showHome() {
+        _state.update { it.copy(destination = DashDestination.HOME, draft = null) }
+    }
+
+    fun selectBoardingPoint(point: BoardingPoint) {
+        viewModelScope.launch {
+            val configuration = container.boardingPointRepository.loadConfiguration()
+            container.boardingPointRepository.saveConfiguration(configuration.copy(currentBoardingPointId = point.id))
+            _state.update {
+                it.copy(destination = DashDestination.HOME, currentBoardingPoint = point, upcomingBuses = emptyList())
+            }
+            refresh()
+        }
+    }
+
+    fun editBoardingPoint(point: BoardingPoint) {
+        _state.update {
+            it.copy(
+                draft = BoardingPointDraft(point.id, point.name, point.routes),
+                destination = DashDestination.EDIT_BOARDING_POINT,
+            )
+        }
+    }
+
+    fun addBoardingPoint() {
+        _state.update {
+            it.copy(
+                draft = BoardingPointDraft(null, "", emptyMap()),
+                destination = DashDestination.EDIT_BOARDING_POINT,
+            )
+        }
+    }
+
+    fun updateDraftName(name: String) {
+        _state.update { it.copy(draft = it.draft?.copy(name = name)) }
+    }
+
+    fun removeDraftStop(stop: dev.utrpanic.dash.domain.model.BusStop) {
+        _state.update { state ->
+            state.copy(draft = state.draft?.copy(routes = state.draft.routes - stop))
+        }
+    }
+
+    fun saveDraft() {
+        val draft = _state.value.draft ?: return
+        val name = draft.name.trim()
+        if (name.isEmpty() || _state.value.isSaving) return
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, errorMessage = null) }
+            runCatching {
+                val configuration = container.boardingPointRepository.loadConfiguration()
+                val point = BoardingPoint(draft.originalId ?: UUID.randomUUID().toString().lowercase(), name, draft.routes)
+                val points = if (draft.originalId == null) {
+                    configuration.boardingPoints + point
+                } else {
+                    configuration.boardingPoints.map { if (it.id == draft.originalId) point else it }
+                }
+                container.boardingPointRepository.saveConfiguration(configuration.copy(boardingPoints = points))
+                configuration.copy(boardingPoints = points) to point
+            }.onSuccess { (configuration, point) ->
+                _state.update { state ->
+                    state.copy(
+                        isSaving = false,
+                        boardingPoints = configuration.boardingPoints,
+                        currentBoardingPoint = if (state.currentBoardingPoint?.id == point.id) point else state.currentBoardingPoint,
+                        destination = DashDestination.BOARDING_POINTS,
+                        draft = null,
+                    )
+                }
+            }.onFailure {
+                _state.update { it.copy(isSaving = false, errorMessage = "탑승 지점을 저장하지 못했습니다.") }
+            }
+        }
+    }
+
+    fun deleteDraft() {
+        val id = _state.value.draft?.originalId ?: return
+        if (_state.value.boardingPoints.size <= 1 || _state.value.isSaving) return
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, errorMessage = null) }
+            runCatching {
+                val configuration = container.boardingPointRepository.loadConfiguration()
+                val points = configuration.boardingPoints.filterNot { it.id == id }
+                val currentId = configuration.currentBoardingPointId.takeUnless { it == id } ?: points.firstOrNull()?.id
+                val updated = configuration.copy(boardingPoints = points, currentBoardingPointId = currentId)
+                container.boardingPointRepository.saveConfiguration(updated)
+                updated
+            }.onSuccess { configuration ->
+                _state.update {
+                    it.copy(
+                        isSaving = false,
+                        boardingPoints = configuration.boardingPoints,
+                        currentBoardingPoint = configuration.boardingPoints.firstOrNull { point ->
+                            point.id == configuration.currentBoardingPointId
+                        },
+                        destination = DashDestination.BOARDING_POINTS,
+                        draft = null,
+                    )
+                }
+            }.onFailure {
+                _state.update { it.copy(isSaving = false, errorMessage = "탑승 지점을 삭제하지 못했습니다.") }
+            }
         }
     }
 

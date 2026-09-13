@@ -15,7 +15,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.utrpanic.dash.ui.home.DashHomeScreen
+import dev.utrpanic.dash.ui.home.DashDestination
 import dev.utrpanic.dash.ui.home.DashViewModel
+import dev.utrpanic.dash.ui.boardingpoint.BoardingPointEditScreen
+import dev.utrpanic.dash.ui.boardingpoint.BoardingPointListScreen
 import dev.utrpanic.dash.ui.theme.DashTheme
 
 class MainActivity : ComponentActivity() {
@@ -49,12 +52,34 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                DashHomeScreen(
-                    state = state,
-                    onSelectNext = viewModel::selectNextBoardingPoint,
-                    onRefresh = viewModel::refresh,
-                    onLocate = viewModel::resolveFromCurrentLocation,
-                )
+                when (state.destination) {
+                    DashDestination.HOME -> DashHomeScreen(
+                        state = state,
+                        onSelectNext = viewModel::selectNextBoardingPoint,
+                        onRefresh = viewModel::refresh,
+                        onLocate = viewModel::resolveFromCurrentLocation,
+                        onManage = viewModel::openBoardingPoints,
+                    )
+                    DashDestination.BOARDING_POINTS -> BoardingPointListScreen(
+                        points = state.boardingPoints,
+                        currentId = state.currentBoardingPoint?.id,
+                        onBack = viewModel::showHome,
+                        onSelect = viewModel::selectBoardingPoint,
+                        onEdit = viewModel::editBoardingPoint,
+                        onAdd = viewModel::addBoardingPoint,
+                    )
+                    DashDestination.EDIT_BOARDING_POINT -> BoardingPointEditScreen(
+                        draft = state.draft,
+                        canDelete = state.draft?.originalId != null && state.boardingPoints.size > 1,
+                        isSaving = state.isSaving,
+                        errorMessage = state.errorMessage,
+                        onBack = viewModel::openBoardingPoints,
+                        onNameChange = viewModel::updateDraftName,
+                        onRemoveStop = viewModel::removeDraftStop,
+                        onSave = viewModel::saveDraft,
+                        onDelete = viewModel::deleteDraft,
+                    )
+                }
             }
         }
     }

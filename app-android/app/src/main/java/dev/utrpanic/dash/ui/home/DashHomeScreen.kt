@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -51,6 +52,7 @@ fun DashHomeScreen(
     onSelectNext: () -> Unit,
     onRefresh: () -> Unit,
     onLocate: () -> Unit,
+    onManage: () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -64,7 +66,7 @@ fun DashHomeScreen(
             when {
                 state.isLoadingConfiguration -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 state.currentBoardingPoint == null -> EmptyHome(onLocate)
-                else -> ArrivalList(state, onSelectNext, onRefresh)
+                else -> ArrivalList(state, onSelectNext, onRefresh, onManage)
             }
             if (state.currentBoardingPoint != null) {
                 Row(
@@ -80,18 +82,26 @@ fun DashHomeScreen(
 }
 
 @Composable
-private fun ArrivalList(state: DashUiState, onSelectNext: () -> Unit, onRefresh: () -> Unit) {
+private fun ArrivalList(
+    state: DashUiState,
+    onSelectNext: () -> Unit,
+    onRefresh: () -> Unit,
+    onManage: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 24.dp, 16.dp, 104.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Column(Modifier.fillMaxWidth().clickable(onClick = onSelectNext).padding(vertical = 8.dp)) {
-                Text(state.currentBoardingPoint?.name.orEmpty(), style = MaterialTheme.typography.headlineMedium)
-                state.lastUpdatedAt?.let {
-                    Text(elapsedText(it, state.now), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).clickable(onClick = onSelectNext).padding(vertical = 8.dp)) {
+                    Text(state.currentBoardingPoint?.name.orEmpty(), style = MaterialTheme.typography.headlineMedium)
+                    state.lastUpdatedAt?.let {
+                        Text(elapsedText(it, state.now), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
+                FilledIconButton(onClick = onManage) { Icon(Icons.Rounded.Menu, contentDescription = "탑승 지점 목록") }
             }
         }
         state.errorMessage?.let { message ->
