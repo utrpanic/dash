@@ -10,6 +10,7 @@ struct AddBusStopFeature {
     var query = ""
     var selectedStopID: BusStop.ID?
     var userLocation: UserLocation?
+    var locationErrorMessage: String?
     var isLoadingLocation = false
     var isLoadingStops = false
     var stopLoadErrorMessage: String?
@@ -51,6 +52,7 @@ struct AddBusStopFeature {
       case .task:
         guard !state.isLoadingLocation else { return .none }
         state.isLoadingLocation = true
+        state.locationErrorMessage = nil
         return .run { send in
           do {
             await send(.locationResponse(.success(try await userLocationClient.requestLocation())))
@@ -63,11 +65,18 @@ struct AddBusStopFeature {
 
       case let .locationResponse(result):
         state.isLoadingLocation = false
-        if case let .success(location) = result {
+        switch result {
+        case let .success(location):
           state.userLocation = location
+          state.locationErrorMessage = nil
           return loadNearbyStops(latitude: location.latitude, longitude: location.longitude, state: &state)
+        case .failure(.authorizationDenied):
+          state.locationErrorMessage = "위치 권한이 없습니다. 정류장을 검색해주세요."
+          return .none
+        case .failure(.locationUnavailable):
+          state.locationErrorMessage = "현재 위치를 확인할 수 없습니다. 정류장을 검색해주세요."
+          return .none
         }
-        return .none
 
       case let .queryChanged(query):
         state.query = query

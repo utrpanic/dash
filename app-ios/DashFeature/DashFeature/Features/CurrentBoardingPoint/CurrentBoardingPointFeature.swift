@@ -84,6 +84,7 @@ struct CurrentBoardingPointFeature: Sendable {
     case locationButtonTapped
     case nextBoardingPointButtonTapped
     case refreshButtonTapped
+    case retryConfigurationLoadButtonTapped
     case retryConfigurationSaveButtonTapped
     case boardingPointSelected(BoardingPoint.ID)
     case boardingPointDeleted(BoardingPoint.ID)
@@ -160,9 +161,9 @@ struct CurrentBoardingPointFeature: Sendable {
         state.boardingPointSelection = .locating
         return .send(.task)
 
-      case let .configurationLoadResponse(.failure(message)):
+      case .configurationLoadResponse(.failure):
         state.isLoadingConfiguration = false
-        state.configurationLoadErrorMessage = message
+        state.configurationLoadErrorMessage = "탑승 지점 정보를 불러오지 못했습니다."
         state.boardingPointSelection = .locationUnavailable
         return .none
 
@@ -230,9 +231,9 @@ struct CurrentBoardingPointFeature: Sendable {
         state.lastUpdatedAt = now
         return .none
 
-      case let .loadUpcomingBusesResponse(.failure(message)):
+      case .loadUpcomingBusesResponse(.failure):
         state.isLoadingUpcomingBuses = false
-        state.upcomingBusesErrorMessage = message
+        state.upcomingBusesErrorMessage = "도착 정보를 불러오지 못했습니다."
         return .none
 
       case .locationButtonTapped:
@@ -288,6 +289,10 @@ struct CurrentBoardingPointFeature: Sendable {
 
       case .refreshButtonTapped:
         return .send(.loadUpcomingBuses)
+
+      case .retryConfigurationLoadButtonTapped:
+        state.configurationLoadErrorMessage = nil
+        return .send(.task)
 
       case .retryConfigurationSaveButtonTapped:
         state.configurationSaveErrorMessage = nil

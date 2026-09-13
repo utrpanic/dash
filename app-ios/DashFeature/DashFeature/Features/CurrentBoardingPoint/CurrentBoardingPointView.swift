@@ -45,11 +45,9 @@ struct CurrentBoardingPointView: View {
           Spacer()
         } else if let configurationLoadErrorMessage = store.configurationLoadErrorMessage {
           Spacer()
-          Text(configurationLoadErrorMessage)
-            .font(r.font.body)
-            .foregroundStyle(r.color.textSecondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
+          errorState(configurationLoadErrorMessage) {
+            store.send(.retryConfigurationLoadButtonTapped)
+          }
           Spacer()
         } else if let boardingPointSelectionMessage {
           Spacer()
@@ -61,10 +59,9 @@ struct CurrentBoardingPointView: View {
           Spacer()
         } else if let errorMessage = store.upcomingBusesErrorMessage {
           Spacer()
-          Text(errorMessage)
-            .font(r.font.body)
-            .foregroundStyle(r.color.textSecondary)
-            .frame(maxWidth: .infinity)
+          errorState(errorMessage) {
+            store.send(.refreshButtonTapped)
+          }
           Spacer()
         } else if !store.selectedBoardingPointHasSelectedRoutes {
           Spacer()
@@ -121,6 +118,23 @@ struct CurrentBoardingPointView: View {
       guard scenePhase == .active else { return }
       store.send(.appBecameActive)
     }
+  }
+
+  private func errorState(
+    _ message: String,
+    retry: @escaping () -> Void
+  ) -> some View {
+    VStack(spacing: r.dimen.spacingMedium) {
+      Text(message)
+        .font(r.font.body)
+        .foregroundStyle(r.color.textSecondary)
+        .multilineTextAlignment(.center)
+      Button("다시 시도", action: retry)
+        .font(r.font.navigationAction)
+        .foregroundStyle(r.color.brandMint)
+        .buttonStyle(.plain)
+    }
+    .frame(maxWidth: .infinity)
   }
 
   private var floatingButtons: some View {

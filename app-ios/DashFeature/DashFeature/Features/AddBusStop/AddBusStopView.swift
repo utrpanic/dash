@@ -128,9 +128,10 @@ struct AddBusStopView: View {
               .foregroundStyle(r.color.textSecondary)
               .padding(.vertical, r.dimen.spacingLarge)
           } else if store.availableStops.isEmpty {
-            Text(store.query.isEmpty ? "주변 정류장이 없습니다." : "검색 결과가 없습니다.")
+            Text(emptyStopsMessage)
               .font(r.font.body)
               .foregroundStyle(r.color.textSecondary)
+              .multilineTextAlignment(.center)
               .padding(.vertical, r.dimen.spacingLarge)
           } else {
             ForEach(Array(store.availableStops.enumerated()), id: \.element.id) { index, stop in
@@ -150,6 +151,13 @@ struct AddBusStopView: View {
         proxy.scrollTo(selectedStopID, anchor: .top)
       }
     }
+  }
+
+  private var emptyStopsMessage: String {
+    if !store.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return "검색 결과가 없습니다."
+    }
+    return store.locationErrorMessage ?? "주변 정류장이 없습니다."
   }
 
   private func stopRow(_ stop: BusStop, markerLetter: String) -> some View {

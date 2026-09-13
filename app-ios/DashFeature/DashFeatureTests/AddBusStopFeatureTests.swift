@@ -42,3 +42,31 @@ import Testing
     $0.availableStops = stops
   }
 }
+
+@MainActor
+@Test func locationPermissionFailureExplainsSearchFallback() async {
+  var initialState = AddBusStopFeature.State(boardingPoint: .suwonStation)
+  initialState.isLoadingLocation = true
+  let store = TestStore(initialState: initialState) {
+    AddBusStopFeature()
+  }
+
+  await store.send(.locationResponse(.failure(.authorizationDenied))) {
+    $0.isLoadingLocation = false
+    $0.locationErrorMessage = "위치 권한이 없습니다. 정류장을 검색해주세요."
+  }
+}
+
+@MainActor
+@Test func unavailableLocationExplainsSearchFallback() async {
+  var initialState = AddBusStopFeature.State(boardingPoint: .suwonStation)
+  initialState.isLoadingLocation = true
+  let store = TestStore(initialState: initialState) {
+    AddBusStopFeature()
+  }
+
+  await store.send(.locationResponse(.failure(.locationUnavailable))) {
+    $0.isLoadingLocation = false
+    $0.locationErrorMessage = "현재 위치를 확인할 수 없습니다. 정류장을 검색해주세요."
+  }
+}

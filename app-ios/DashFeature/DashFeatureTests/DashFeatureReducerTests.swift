@@ -126,3 +126,35 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 
   await store.send(.appBecameActive)
 }
+
+@MainActor
+@Test func configurationLoadFailureCanRetryWithoutExposingInternalError() async {
+  let configuration = BoardingPointConfiguration(
+    boardingPoints: [],
+    currentBoardingPointID: nil
+  )
+  let store = TestStore(initialState: CurrentBoardingPointFeature.State()) {
+    CurrentBoardingPointFeature()
+  } withDependencies: {
+    $0.boardingPointRepository = BoardingPointRepositoryClient(
+      load: { configuration },
+      save: { _ in }
+    )
+  }
+
+  await store.send(.configurationLoadResponse(.failure("internal database error"))) {
+    $0.boardingPointSelection = .locationUnavailable
+    $0.configurationLoadErrorMessage = "탑승 지점 정보를 불러오지 못했습니다."
+  }
+  await store.send(.retryConfigurationLoadButtonTapped) {
+    $0.configurationLoadErrorMessage = nil
+  }
+  await store.receive(.task) {
+    $0.isLoadingConfiguration = true
+  }
+  await store.receive(.configurationLoadResponse(.success(configuration))) {
+    $0.isLoadingConfiguration = false
+    $0.hasLoadedConfiguration = true
+    $0.boardingPointSelection = .noSelectedRoutes
+  }
+}
