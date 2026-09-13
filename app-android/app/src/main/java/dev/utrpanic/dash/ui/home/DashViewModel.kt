@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
 
-enum class DashDestination { HOME, BOARDING_POINTS, EDIT_BOARDING_POINT, ADD_BUS_STOP }
+enum class DashDestination { HOME, BOARDING_POINTS, EDIT_BOARDING_POINT, ADD_BUS_STOP, SELECT_BUS_ROUTES }
 
 data class BoardingPointDraft(
     val originalId: String?,
@@ -46,6 +46,11 @@ data class DashUiState(
     val isLoadingStops: Boolean = false,
     val isLoadingStopRoutes: Boolean = false,
     val stopSearchError: String? = null,
+    val routeSelectionStop: dev.utrpanic.dash.domain.model.BusStop? = null,
+    val routeCandidates: List<dev.utrpanic.dash.domain.model.BusRoute> = emptyList(),
+    val selectedRoutes: Set<dev.utrpanic.dash.domain.model.BusRoute> = emptySet(),
+    val isLoadingRouteCandidates: Boolean = false,
+    val routeSelectionError: String? = null,
 )
 
 class DashViewModel(private val container: DashContainer) : ViewModel() {
@@ -269,6 +274,69 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                 destination = DashDestination.EDIT_BOARDING_POINT,
             )
         }
+    }
+
+    fun openRouteSelection(stop: dev.utrpanic.dash.domain.model.BusStop) {
+        val storedRoutes = _state.value.draft?.routes?.get(stop).orEmpty()
+        _state.update {
+            it.copy(
+                destination = DashDestination.SELECT_BUS_ROUTES,
+                routeSelectionStop = stop,
+                routeCandidates = storedRoutes.sortedWith(dev.utrpanic.dash.domain.model.BusRouteNaturalComparator),
+                selectedRoutes = storedRoutes,
+                isLoadingRouteCandidates = true,
+                routeSelectionError = null,
+            )
+        }
+        viewModelScope.launch {
+            runCatching { container.busRouteRepository.fetchRoutes(stop) }
+                .onSuccess { fetched ->
+                    if (_state.value.routeSelectionStop == stop) {
+                        _state.update { state ->
+                            state.copy(
+                                routeCandidates = (fetched + storedRoutes).distinct().sortedWith(
+                                    dev.utrpanic.dash.domain.model.BusRouteNaturalComparator,
+                                ),
+                                isLoadingRouteCandidates = false,
+                            )
+                        }
+                    }
+                }
+                .onFailure {
+                    if (_state.value.routeSelectionStop == stop) {
+                        _state.update {
+                            it.copy(
+                                isLoadingRouteCandidates = false,
+                                routeSelectionError = "버스 노선을 불러오지 못했습니다.",
+                            )
+                        }
+                    }
+                }
+        }
+    }
+
+    fun toggleRoute(route: dev.utrpanic.dash.domain.model.BusRoute) {
+        _state.update {
+            it.copy(selectedRoutes = if (route in it.selectedRoutes) it.selectedRoutes - route else it.selectedRoutes + route)
+        }
+    }
+
+    fun completeRouteSelection() {
+        val stop = _state.value.routeSelectionStop ?: return
+        val routes = _state.value.selectedRoutes
+        if (routes.isEmpty()) return
+        _state.update { state ->
+            val draft = state.draft ?: return@update state
+            state.copy(
+                draft = draft.copy(routes = draft.routes + (stop to routes)),
+                destination = DashDestination.EDIT_BOARDING_POINT,
+                routeSelectionStop = null,
+            )
+        }
+    }
+
+    fun retryRouteCandidates() {
+        _state.value.routeSelectionStop?.let(::openRouteSelection)
     }
 
     fun saveDraft() {

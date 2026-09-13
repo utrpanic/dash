@@ -20,6 +20,7 @@ import dev.utrpanic.dash.ui.home.DashViewModel
 import dev.utrpanic.dash.ui.boardingpoint.BoardingPointEditScreen
 import dev.utrpanic.dash.ui.boardingpoint.BoardingPointListScreen
 import dev.utrpanic.dash.ui.busstop.AddBusStopScreen
+import dev.utrpanic.dash.ui.busroute.SelectBusRoutesScreen
 import dev.utrpanic.dash.ui.theme.DashTheme
 
 class MainActivity : ComponentActivity() {
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
                         onSave = viewModel::saveDraft,
                         onDelete = viewModel::deleteDraft,
                         onAddStop = viewModel::openAddBusStop,
+                        onSelectRoutes = viewModel::openRouteSelection,
                     )
                     DashDestination.ADD_BUS_STOP -> AddBusStopScreen(
                         state = state,
@@ -88,6 +90,13 @@ class MainActivity : ComponentActivity() {
                         onSelect = viewModel::selectStop,
                         onRetryRoutes = viewModel::retrySelectedStopRoutes,
                         onAdd = viewModel::addSelectedStop,
+                    )
+                    DashDestination.SELECT_BUS_ROUTES -> SelectBusRoutesScreen(
+                        state = state,
+                        onBack = viewModel::returnToDraft,
+                        onToggle = viewModel::toggleRoute,
+                        onRetry = viewModel::retryRouteCandidates,
+                        onComplete = viewModel::completeRouteSelection,
                     )
                 }
             }

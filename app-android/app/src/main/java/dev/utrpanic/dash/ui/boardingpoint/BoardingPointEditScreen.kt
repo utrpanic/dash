@@ -1,6 +1,7 @@
 package dev.utrpanic.dash.ui.boardingpoint
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +49,7 @@ fun BoardingPointEditScreen(
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onAddStop: () -> Unit,
+    onSelectRoutes: (BusStop) -> Unit,
 ) {
     if (draft == null) return
     var confirmingDelete by remember { mutableStateOf(false) }
@@ -80,7 +82,8 @@ fun BoardingPointEditScreen(
             }
             items(draft.routes.keys.toList(), key = { it.id.storageKey }) { stop ->
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().clickable { onSelectRoutes(stop) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
