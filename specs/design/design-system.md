@@ -2,22 +2,24 @@
 
 ## 목적
 
-이 문서는 Dash의 모든 iOS 화면에 적용하는 공통 UI 계약이다. 화면 시안은 이 계약을 적용한 예시이며, 값이 충돌하면 이 문서를 우선한다.
+이 문서는 Dash의 iOS와 Android 화면에 적용하는 공통 UI 계약이다. 현재 iOS 구현의 의미 기반 token과 시각 문법을 기준으로 하되, 물리 단위와 시스템 control은 플랫폼 관례에 맞게 매핑한다.
 
 화면 구현에서 새로운 간격, 높이, radius, 선택 표현을 임의로 만들지 않는다. 새로운 값이 필요하면 먼저 이 문서에 사용 목적과 예외 범위를 기록한다.
 
 ## 원칙
 
-1. iOS의 기본 내비게이션, 접근성, Dynamic Type 동작을 우선한다.
+1. 각 플랫폼의 기본 내비게이션과 접근성 동작을 우선한다.
 2. 빠른 비교가 필요한 데이터는 평면 목록, 독립적인 상태 정보와 독립된 선택 단위는 card로 표현한다. grouped surface는 서로 의존하는 입력값 묶음에만 사용한다.
 3. 같은 의미의 상태는 모든 화면에서 같은 시각 문법을 사용한다.
 4. 높이는 텍스트가 커질 수 있도록 고정값보다 최소 높이와 padding으로 정의한다.
 5. 콘텐츠 표면에는 그림자를 사용하지 않고 Divider 또는 얇은 stroke를 사용한다.
 
-참고 기준:
+플랫폼 참고 기준:
 
 - [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
-- [Apple Design Resources](https://developer.apple.com/design/resources/)
+- [Material Design](https://m3.material.io/)
+
+아래 `pt` 값은 현재 iOS 기준값이다. Android는 숫자를 기계적으로 복사하지 않고 같은 정보 위계와 밀도를 유지하도록 `dp`·`sp`로 매핑한다.
 
 ## Foundations
 
@@ -57,9 +59,10 @@
 | `input` | 20pt regular | 단일 행 입력값 |
 | `rowTitle` | 20pt medium | 일반 행 제목 |
 | `selectedRowTitle` | 20pt semibold | 선택 행 제목 |
-| `routeNumber` | 32pt semibold | 노선 선택 행의 노선 번호 |
+| `routeTileNumber` | 23pt semibold | 노선 선택 tile의 노선 번호 |
 | `body` | 16pt regular | 본문과 행 보조 정보 |
 | `metadata` | 14pt regular | 식별자와 부가 정보 |
+| `caption` | 12pt regular | 작은 상태 및 indicator |
 | `navigationAction` | 17pt semibold | 저장·완료 같은 텍스트 액션 |
 | `arrivalRoute` | 40pt semibold | 도착 카드 노선 번호 |
 | `arrivalValue` | 48pt | 도착까지 남은 시간 |
@@ -70,7 +73,7 @@
 
 | Token | Value | 용도 |
 |---|---:|---|
-| `minimumTouchTarget` | 44pt | 모든 버튼과 선택 영역 |
+| `minimumTouchTarget` | 44pt | iOS의 모든 버튼과 선택 영역 |
 | `textFieldHeight` | 52pt | 단일 행 입력 |
 | `primaryButtonHeight` | 56pt | 화면 주요 액션 |
 | `utilityButtonSize` | 64pt | 지도·새로고침 floating 원형 버튼 |
@@ -79,6 +82,10 @@
 | `richRowMinHeight` | 88pt | 세 줄 이상 또는 줄바꿈 가능한 행 |
 | `rowVerticalPadding` | 14pt | 목록 행 상하 padding |
 | `selectionRailWidth` | 4pt | 단일 선택 rail |
+| `selectionTileMinHeight` | 68pt | 노선 선택 tile |
+| `selectionTileIndicatorSize` | 18pt | 선택 check circle |
+| `mapMarkerSize` | 32pt | 지도 marker |
+| `listMarkerSize` | 48pt | 목록 marker |
 
 ### Radius
 
@@ -136,6 +143,7 @@
 - 독립적인 정보 단위를 다중 선택할 때만 사용한다.
 - status card와 같은 `surface`, `16pt` radius, divider 색상 1pt stroke를 사용한다.
 - 선택 상태는 `brand.opacity(0.08)` 배경과 trailing check circle로 표시하며, stroke 색상은 바꾸지 않는다.
+- 현재 노선 선택 화면은 최소 폭 `96pt`, 최소 높이 `68pt`의 adaptive grid tile로 사용한다.
 
 ### Primary button
 
@@ -160,7 +168,7 @@
 - 접근성 레이블에 선택 상태 포함
 - rail은 목록의 실제 leading edge에 붙고, 텍스트만 `16pt` inset을 사용한다.
 
-탑승 지점 목록의 현재 지점과 정류장 추가 화면의 임시 선택은 같은 단일 선택 컴포넌트를 사용한다.
+탑승 지점 목록의 현재 지점과 정류장 추가 화면의 임시 선택은 같은 단일 선택 문법을 사용한다. 정류장 선택 행은 같은 자리에서 즉시 확장되며 선택 직전의 요약 영역 높이와 배치를 유지한다.
 
 ### 다중 선택
 
@@ -224,8 +232,9 @@
 
 ### MultiSelectList
 
-- selectable card 목록
+- adaptive selectable tile grid
 - trailing check 기반 multi selection 상태
+- section header의 선택 개수
 - 완료 action
 
 적용: 버스 노선 선택 화면
@@ -235,8 +244,8 @@
 - full-width 1:1 지도
 - 지도 위 검색 overlay
 - 지도와 연결된 flat list
-- single selection 상태
-- floating primary action
+- 즉시 반응하는 single selection 및 선택 행 확장
+- 확장 행 내부의 full-width primary action
 
 적용: 정류장 추가 화면
 
@@ -263,12 +272,20 @@ Exceptions: none
 - 시안에만 존재하고 문서화되지 않은 숫자는 구현 기준으로 사용하지 않는다.
 - 공통 component 변경은 대표 화면 한 곳에서 먼저 검증한 뒤 다른 화면에 적용한다.
 
+## 플랫폼 매핑
+
+- iOS는 SwiftUI, Dynamic Type, VoiceOver와 최소 `44pt` 터치 영역을 기준으로 한다.
+- Android는 Jetpack Compose, font scaling, TalkBack과 최소 `48dp` 터치 영역을 기준으로 한다.
+- system navigation, back gesture, dialog와 loading indicator의 외형은 플랫폼 기본 표현을 사용한다.
+- brand color, 정보 위계, surface 선택, 단일·다중 선택 문법은 플랫폼 간 동일하게 유지한다.
+- iOS 고유 API나 SF Symbol 이름을 공유 계약으로 사용하지 않는다. Android에서는 같은 의미의 Material/system icon을 선택한다.
+
 ## 검수 체크리스트
 
 1. raw spacing, font size, radius가 화면 코드에 새로 추가되지 않았는가?
 2. flat list, grouped surface, status card 선택이 데이터 목적과 맞는가?
 3. 선택 상태가 해당 selection pattern과 일치하는가?
-4. 모든 interactive element가 44pt 이상인가?
+4. 모든 interactive element가 플랫폼 최소 터치 영역(iOS 44pt, Android 48dp) 이상인가?
 5. Dynamic Type에서 고정 높이 때문에 텍스트가 잘리지 않는가?
 6. loading, empty, error, content 상태가 정의되어 있는가?
 7. VoiceOver 레이블에 역할과 상태가 포함되는가?
