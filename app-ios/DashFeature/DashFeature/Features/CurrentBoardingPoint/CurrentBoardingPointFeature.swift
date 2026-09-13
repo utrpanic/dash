@@ -545,20 +545,55 @@ private extension CurrentBoardingPointFeature {
   }
 
   func fetchUpcomingBuses(boardingPoint: BoardingPoint) async throws -> [UpcomingBus] {
-    var upcomingBuses: [UpcomingBus] = []
-
-    for (busStop, busRoutes) in boardingPoint.routes {
-      let arrivals = try await busArrivalRepository.fetchArrivals(
-        at: busStop,
-        for: busRoutes
-      )
-      for arrival in arrivals {
-        upcomingBuses.append(
-          contentsOf: arrival.upcomingBuses(boardingPoint: boardingPoint, busStop: busStop)
-        )
+    let selectedStops = boardingPoint.routes.filter { !$0.value.isEmpty }
+    let results = await withTaskGroup(of: StopFetchResult.self) { group in
+      for (busStop, busRoutes) in selectedStops {
+        group.addTask { [busArrivalRepository] in
+          do {
+            let arrivals = try await busArrivalRepository.fetchArrivals(
+              at: busStop,
+              for: busRoutes
+            )
+            return .success(
+              arrivals.flatMap {
+                $0.upcomingBuses(boardingPoint: boardingPoint, busStop: busStop)
+              }
+            )
+          } catch {
+            return .failure
+          }
+        }
       }
+
+      var results: [StopFetchResult] = []
+      for await result in group {
+        results.append(result)
+      }
+      return results
     }
 
-    return upcomingBuses.sortedByArrival
+    guard results.contains(where: \.isSuccess) else {
+      throw UpcomingBusFetchError.unavailable
+    }
+    return results.flatMap(\.upcomingBuses).sortedByArrival
+  }
+}
+
+private enum UpcomingBusFetchError: Error {
+  case unavailable
+}
+
+private enum StopFetchResult: Sendable {
+  case success([UpcomingBus])
+  case failure
+
+  var isSuccess: Bool {
+    if case .success = self { return true }
+    return false
+  }
+
+  var upcomingBuses: [UpcomingBus] {
+    if case let .success(upcomingBuses) = self { return upcomingBuses }
+    return []
   }
 }

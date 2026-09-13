@@ -34,15 +34,20 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 
 @MainActor
 @Test func reducerLoadsUpcomingBusesFromSeoulArrivalAPI() async {
+  let boardingPoint = BoardingPoint(
+    id: "the-hyundai-seoul-662",
+    name: "더현대서울",
+    routes: [.theHyundaiSeoul: [.route662]]
+  )
   let expectedUpcomingBus = UpcomingBus(
-    boardingPoint: .theHyundaiSeoul,
+    boardingPoint: boardingPoint,
     busStop: .theHyundaiSeoul,
     busRoute: .route662,
     timeIntervalUntilArrival: 4 * 60
   )
   var initialState = CurrentBoardingPointFeature.State()
-  initialState.boardingPoints = [.theHyundaiSeoul]
-  initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
+  initialState.boardingPoints = [boardingPoint]
+  initialState.boardingPointSelection = .selected(boardingPoint.id)
 
   let store = TestStore(initialState: initialState) {
     CurrentBoardingPointFeature()
@@ -80,6 +85,65 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     $0.isLoadingUpcomingBuses = false
     $0.upcomingBuses = [expectedUpcomingBus]
     $0.upcomingBusesErrorMessage = nil
+    $0.lastUpdatedAt = testNow
+  }
+}
+
+@MainActor
+@Test func reducerKeepsSuccessfulArrivalsWhenAnotherStopFails() async {
+  let firstStop = BusStop.suwonStationExit7Outer
+  let secondStop = BusStop.suwonStationExit7Inner
+  let boardingPoint = BoardingPoint(
+    id: "partial-arrivals",
+    name: "부분 성공",
+    routes: [
+      firstStop: [.route13],
+      secondStop: [.route13_1],
+    ]
+  )
+  let arrival = BusArrival(
+    stopID: firstStop.id.stopID,
+    route: .route13,
+    stopOrder: 1,
+    operationState: "",
+    firstPrediction: BusArrivalPrediction(
+      minutes: 2,
+      seconds: 120,
+      locationNumber: nil,
+      plateNumber: "",
+      remainingSeatCount: nil,
+      stateCode: nil,
+      stopName: firstStop.name,
+      vehicleId: nil
+    ),
+    secondPrediction: nil
+  )
+  let expectedBus = UpcomingBus(
+    boardingPoint: boardingPoint,
+    busStop: firstStop,
+    busRoute: .route13,
+    timeIntervalUntilArrival: 120
+  )
+  var initialState = CurrentBoardingPointFeature.State()
+  initialState.boardingPoints = [boardingPoint]
+  initialState.boardingPointSelection = .selected(boardingPoint.id)
+
+  let store = TestStore(initialState: initialState) {
+    CurrentBoardingPointFeature()
+  } withDependencies: {
+    $0.date.now = testNow
+    $0.busArrivalRepository = BusArrivalRepositoryStub { stop, _ in
+      if stop == firstStop { return [arrival] }
+      throw PartialArrivalTestError.unavailable
+    }
+  }
+
+  await store.send(.loadUpcomingBuses) {
+    $0.isLoadingUpcomingBuses = true
+  }
+  await store.receive(.loadUpcomingBusesResponse(.success([expectedBus]))) {
+    $0.isLoadingUpcomingBuses = false
+    $0.upcomingBuses = [expectedBus]
     $0.lastUpdatedAt = testNow
   }
 }
@@ -139,4 +203,8 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     $0.hasLoadedConfiguration = true
     $0.boardingPointSelection = .noSelectedRoutes
   }
+}
+
+private enum PartialArrivalTestError: Error {
+  case unavailable
 }

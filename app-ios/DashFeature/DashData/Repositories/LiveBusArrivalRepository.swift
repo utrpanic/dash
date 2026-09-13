@@ -31,16 +31,62 @@ public struct LiveBusArrivalRepository: BusArrivalRepository {
         .filter { routeIDs.contains($0.route.id) }
 
     case let .seoul(stopID, _):
-      var arrivals: [BusArrival] = []
-      for route in routes {
-        let routeArrivals = try await seoulAPI.fetchArrivalsByRoute(route.id)
-        arrivals.append(
-          contentsOf: routeArrivals
-            .map { $0.toDomain() }
-            .filter { $0.stopID == stopID }
-        )
-      }
-      return arrivals
+      return try await Self.fetchSeoulArrivals(
+        stopID: stopID,
+        routes: routes,
+        fetchArrivalsByRoute: seoulAPI.fetchArrivalsByRoute
+      )
     }
+  }
+
+  static func fetchSeoulArrivals(
+    stopID: Int,
+    routes: Set<BusRoute>,
+    fetchArrivalsByRoute: @escaping @Sendable (Int) async throws -> [SeoulBusArrivalDTO]
+  ) async throws -> [BusArrival] {
+    let results = await withTaskGroup(of: RouteFetchResult.self) { group in
+      for route in routes {
+        group.addTask {
+          do {
+            let arrivals = try await fetchArrivalsByRoute(route.id)
+              .map { $0.toDomain() }
+              .filter { $0.stopID == stopID }
+            return .success(arrivals)
+          } catch {
+            return .failure
+          }
+        }
+      }
+
+      var results: [RouteFetchResult] = []
+      for await result in group {
+        results.append(result)
+      }
+      return results
+    }
+
+    guard results.contains(where: \.isSuccess) else {
+      throw LiveBusArrivalRepositoryError.unavailable
+    }
+    return results.flatMap(\.arrivals)
+  }
+}
+
+private enum LiveBusArrivalRepositoryError: Error {
+  case unavailable
+}
+
+private enum RouteFetchResult: Sendable {
+  case success([BusArrival])
+  case failure
+
+  var isSuccess: Bool {
+    if case .success = self { return true }
+    return false
+  }
+
+  var arrivals: [BusArrival] {
+    if case let .success(arrivals) = self { return arrivals }
+    return []
   }
 }
