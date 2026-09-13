@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,7 @@ fun AddBusStopScreen(
             )
         },
     ) { insets ->
-        Column(Modifier.fillMaxSize().padding(insets)) {
+        Column(Modifier.fillMaxSize().padding(insets).testTag("add-bus-stop-screen")) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
                 GoogleMap(modifier = Modifier.fillMaxSize(), cameraPositionState = cameraState) {
                     state.stopResults.forEachIndexed { index, stop ->

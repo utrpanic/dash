@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.utrpanic.dash.domain.model.BusStop
@@ -84,7 +85,8 @@ fun BoardingPointEditScreen(
             }
             items(draft.routes.keys.toList(), key = { it.id.storageKey }) { stop ->
                 Row(
-                    Modifier.fillMaxWidth().clickable { onSelectRoutes(stop) }
+                    Modifier.fillMaxWidth().testTag("edit-stop-${stop.id.storageKey}")
+                        .clickable { onSelectRoutes(stop) }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

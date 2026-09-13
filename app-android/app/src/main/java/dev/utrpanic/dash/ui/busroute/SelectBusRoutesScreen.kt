@@ -36,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,7 +64,7 @@ fun SelectBusRoutesScreen(
             )
         },
     ) { insets ->
-        Column(Modifier.fillMaxSize().padding(insets)) {
+        Column(Modifier.fillMaxSize().padding(insets).testTag("select-bus-routes-screen")) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(state.routeSelectionStop?.name.orEmpty(), style = MaterialTheme.typography.titleLarge)
                 Text(
