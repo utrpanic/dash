@@ -27,9 +27,10 @@ public struct GyeonggiBusArrivalAPIService: Sendable {
 
   public func fetchArrivals(_ stationId: Int) async throws -> [BusArrivalDTO] {
     let responseDTO: BusArrivalListResponseDTO = try await fetch(
-      .arrivalList(stationId: stationId, serviceKey: serviceKey())
+      .arrivalList(stationId: stationId, serviceKey: serviceKey()),
+      allowsEmptyResult: true
     )
-    return responseDTO.response.msgBody.busArrivalList.values
+    return responseDTO.response.msgBody?.busArrivalList.values ?? []
   }
 }
 
@@ -102,7 +103,8 @@ private enum GyeonggiBusArrivalAPIRequest {
 
 private extension GyeonggiBusArrivalAPIService {
   func fetch<ResponseDTO: Decodable & BusArrivalAPIResponseDTO>(
-    _ request: GyeonggiBusArrivalAPIRequest
+    _ request: GyeonggiBusArrivalAPIRequest,
+    allowsEmptyResult: Bool = false
   ) async throws -> ResponseDTO {
     let url = try request.url()
     var urlRequest = URLRequest(url: url)
@@ -117,7 +119,9 @@ private extension GyeonggiBusArrivalAPIService {
     }
 
     let responseDTO = try JSONDecoder().decode(ResponseDTO.self, from: data)
-    guard responseDTO.resultCode == 0 else {
+    guard responseDTO.resultCode == 0
+      || (allowsEmptyResult && responseDTO.resultCode == 4)
+    else {
       throw GyeonggiBusArrivalAPIError.apiFailure(
         resultCode: responseDTO.resultCode,
         message: responseDTO.resultMessage

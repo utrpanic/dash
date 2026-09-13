@@ -4,7 +4,7 @@ public struct BusArrivalListResponseDTO: Decodable, Equatable, Sendable {
   public let response: ResponseDTO
 
   func toDomain() -> [BusArrival] {
-    response.msgBody.busArrivalList.values.map { $0.toDomain() }
+    response.msgBody?.busArrivalList.values.map { $0.toDomain() } ?? []
   }
 }
 
@@ -16,7 +16,7 @@ extension BusArrivalListResponseDTO: BusArrivalAPIResponseDTO {
 public extension BusArrivalListResponseDTO {
   struct ResponseDTO: Decodable, Equatable, Sendable {
     public let msgHeader: MessageHeaderDTO
-    public let msgBody: MessageBodyDTO
+    public let msgBody: MessageBodyDTO?
   }
 
   struct MessageHeaderDTO: Decodable, Equatable, Sendable {
