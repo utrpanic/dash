@@ -222,28 +222,16 @@ struct CurrentBoardingPointView: View {
   private func elapsedTimeText(from startDate: Date, to endDate: Date) -> String {
     let elapsedSeconds = max(Int(endDate.timeIntervalSince(startDate)), 0)
     if elapsedSeconds < 60 {
-      return "\(elapsedSeconds)s ago"
+      return "\(elapsedSeconds)초 전"
     }
     if elapsedSeconds < 60 * 60 {
-      return "\(elapsedSeconds / 60)m ago"
+      return "\(elapsedSeconds / 60)분 전"
     }
-    return "\(elapsedSeconds / 60 / 60)h ago"
+    return "\(elapsedSeconds / 60 / 60)시간 전"
   }
 
   private func elapsedTimeAccessibilityLabel(from startDate: Date, to endDate: Date) -> String {
-    let elapsedSeconds = max(Int(endDate.timeIntervalSince(startDate)), 0)
-    if elapsedSeconds < 60 {
-      let unit = elapsedSeconds == 1 ? "second" : "seconds"
-      return "Updated \(elapsedSeconds) \(unit) ago"
-    }
-    if elapsedSeconds < 60 * 60 {
-      let elapsedMinutes = elapsedSeconds / 60
-      let unit = elapsedMinutes == 1 ? "minute" : "minutes"
-      return "Updated \(elapsedMinutes) \(unit) ago"
-    }
-    let elapsedHours = elapsedSeconds / 60 / 60
-    let unit = elapsedHours == 1 ? "hour" : "hours"
-    return "Updated \(elapsedHours) \(unit) ago"
+    "마지막 업데이트, \(elapsedTimeText(from: startDate, to: endDate))"
   }
 
   private var boardingPointSelectionMessage: String? {
@@ -251,9 +239,9 @@ struct CurrentBoardingPointView: View {
     case .locating:
       return "현재 위치를 확인하고 있습니다."
     case .locationPermissionDenied:
-      return "위치 권한이 없습니다.\n상단에서 목적지를 선택해주세요."
+      return "위치 권한이 없습니다.\n상단에서 탑승 지점을 선택해주세요."
     case .locationUnavailable:
-      return "현재 위치를 확인할 수 없습니다.\n상단에서 목적지를 선택해주세요."
+      return "현재 위치를 확인할 수 없습니다.\n상단에서 탑승 지점을 선택해주세요."
     case .noSelectedRoutes:
       return "선택한 버스 노선이 없습니다.\n탑승 지점을 편집해 노선을 선택하세요."
     case .selected:
