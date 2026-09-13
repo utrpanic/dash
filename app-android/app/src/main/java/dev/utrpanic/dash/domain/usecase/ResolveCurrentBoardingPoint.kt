@@ -10,6 +10,7 @@ import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlinx.coroutines.withTimeout
 
 class ResolveCurrentBoardingPoint(
     private val repository: BoardingPointRepository,
@@ -17,7 +18,7 @@ class ResolveCurrentBoardingPoint(
 ) {
     suspend operator fun invoke(): CurrentBoardingPointResolution {
         val configuration = repository.loadConfiguration()
-        val location = runCatching { locationProvider.currentLocation() }.getOrNull()
+        val location = runCatching { withTimeout(5_000) { locationProvider.currentLocation() } }.getOrNull()
         val nearest = location?.let { nearestValidPoint(configuration.boardingPoints, it) }
         if (nearest != null) {
             if (configuration.currentBoardingPointId != nearest.id) {
