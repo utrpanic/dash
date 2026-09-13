@@ -5,4 +5,6 @@
 /.secrets.properties
 
 # Codex local artifacts
-.codex/local/
+.codex/local/*
+!.codex/local/progress-ios.md
+!.codex/local/progress-android.md
