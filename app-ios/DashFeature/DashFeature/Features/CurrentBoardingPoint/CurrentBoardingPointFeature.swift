@@ -74,6 +74,7 @@ struct CurrentBoardingPointFeature: Sendable {
 
   enum Action: Equatable {
     case editButtonTapped
+    case appBecameActive
     case listButtonTapped
     case configurationLoadResponse(ConfigurationLoadResponse)
     case configurationSaveErrorDismissed
@@ -132,6 +133,16 @@ struct CurrentBoardingPointFeature: Sendable {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case .appBecameActive:
+        guard state.hasLoadedConfiguration,
+              state.selectedBoardingPointHasSelectedRoutes,
+              !state.isLoadingUpcomingBuses,
+              state.lastUpdatedAt.map({ now.timeIntervalSince($0) >= 60 }) ?? true
+        else {
+          return .none
+        }
+        return .send(.loadUpcomingBuses)
+
       case let .configurationLoadResponse(.success(configuration)):
         state.isLoadingConfiguration = false
         state.hasLoadedConfiguration = true

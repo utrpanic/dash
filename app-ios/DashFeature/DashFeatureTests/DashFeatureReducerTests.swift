@@ -83,3 +83,46 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     $0.lastUpdatedAt = testNow
   }
 }
+
+@MainActor
+@Test func returningToActiveRefreshesStaleUpcomingBuses() async {
+  let staleUpdate = testNow.addingTimeInterval(-60)
+  var initialState = CurrentBoardingPointFeature.State()
+  initialState.boardingPoints = [.theHyundaiSeoul]
+  initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
+  initialState.hasLoadedConfiguration = true
+  initialState.lastUpdatedAt = staleUpdate
+
+  let store = TestStore(initialState: initialState) {
+    CurrentBoardingPointFeature()
+  } withDependencies: {
+    $0.date.now = testNow
+  }
+
+  await store.send(.appBecameActive)
+  await store.receive(.loadUpcomingBuses) {
+    $0.isLoadingUpcomingBuses = true
+    $0.upcomingBusesErrorMessage = nil
+  }
+  await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+    $0.isLoadingUpcomingBuses = false
+    $0.lastUpdatedAt = testNow
+  }
+}
+
+@MainActor
+@Test func returningToActiveKeepsFreshUpcomingBuses() async {
+  var initialState = CurrentBoardingPointFeature.State()
+  initialState.boardingPoints = [.theHyundaiSeoul]
+  initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
+  initialState.hasLoadedConfiguration = true
+  initialState.lastUpdatedAt = testNow.addingTimeInterval(-59)
+
+  let store = TestStore(initialState: initialState) {
+    CurrentBoardingPointFeature()
+  } withDependencies: {
+    $0.date.now = testNow
+  }
+
+  await store.send(.appBecameActive)
+}

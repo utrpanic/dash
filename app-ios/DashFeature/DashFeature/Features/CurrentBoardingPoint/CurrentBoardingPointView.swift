@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CurrentBoardingPointView: View {
   @Bindable private var store: StoreOf<CurrentBoardingPointFeature>
+  @Environment(\.scenePhase) private var scenePhase
 
   init(store: StoreOf<CurrentBoardingPointFeature>) {
     self.store = store
@@ -115,6 +116,10 @@ struct CurrentBoardingPointView: View {
     }
     .task {
       store.send(.task)
+    }
+    .onChange(of: scenePhase) { _, scenePhase in
+      guard scenePhase == .active else { return }
+      store.send(.appBecameActive)
     }
   }
 
