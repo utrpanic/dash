@@ -1,5 +1,6 @@
 package dev.utrpanic.dash.ui.boardingpoint
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ fun BoardingPointEditScreen(
     onSelectRoutes: (BusStop) -> Unit,
 ) {
     if (draft == null) return
+    BackHandler(onBack = onBack)
     var confirmingDelete by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {

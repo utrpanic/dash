@@ -45,6 +45,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
+import java.util.Locale
 
 @Composable
 fun DashHomeScreen(
@@ -153,7 +154,8 @@ private fun ArrivalCard(bus: UpcomingBus) {
             Column(horizontalAlignment = Alignment.End) {
                 Text("${minutes}분", style = MaterialTheme.typography.displayMedium, fontWeight = weight)
                 Text(
-                    DateTimeFormatter.ofPattern("a h:mm").format(java.time.ZonedDateTime.now().plusSeconds(seconds)),
+                    DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN)
+                        .format(java.time.ZonedDateTime.now().plusSeconds(seconds)),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

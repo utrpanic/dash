@@ -1,5 +1,6 @@
 package dev.utrpanic.dash.ui.boardingpoint
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.utrpanic.dash.domain.model.BoardingPoint
+import dev.utrpanic.dash.domain.model.BusRouteNaturalComparator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +45,7 @@ fun BoardingPointListScreen(
     onEdit: (BoardingPoint) -> Unit,
     onAdd: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,7 +74,8 @@ fun BoardingPointListScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(point.name, style = MaterialTheme.typography.titleLarge, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium)
-                            val routes = point.routes.values.flatten().map { it.number }.distinct().sorted()
+                            val routes = point.routes.values.flatten().distinct()
+                                .sortedWith(BusRouteNaturalComparator).map { it.number }
                             Text(
                                 "${routes.size}개 노선 · ${routes.joinToString(" · ")}",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
