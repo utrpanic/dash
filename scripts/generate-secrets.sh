@@ -96,12 +96,13 @@ write_android_secrets() {
 
 case "$TARGET" in
   ios)
-    write_ios_secrets "$(resolve_secret DATA_GO_KR_SERVICE_KEY)"
+    data_go_kr_service_key=$(resolve_secret DATA_GO_KR_SERVICE_KEY)
+    write_ios_secrets "$data_go_kr_service_key"
     ;;
   android)
-    write_android_secrets \
-      "$(resolve_secret DATA_GO_KR_SERVICE_KEY)" \
-      "$(resolve_secret GOOGLE_MAPS_API_KEY)"
+    data_go_kr_service_key=$(resolve_secret DATA_GO_KR_SERVICE_KEY)
+    google_maps_api_key=$(resolve_secret GOOGLE_MAPS_API_KEY)
+    write_android_secrets "$data_go_kr_service_key" "$google_maps_api_key"
     ;;
   all)
     data_go_kr_service_key=$(resolve_secret DATA_GO_KR_SERVICE_KEY)
