@@ -85,13 +85,12 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 }
 
 @MainActor
-@Test func returningToActiveRefreshesStaleUpcomingBuses() async {
-  let staleUpdate = testNow.addingTimeInterval(-60)
+@Test func returningToActiveRefreshesUpcomingBuses() async {
   var initialState = CurrentBoardingPointFeature.State()
   initialState.boardingPoints = [.theHyundaiSeoul]
   initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
   initialState.hasLoadedConfiguration = true
-  initialState.lastUpdatedAt = staleUpdate
+  initialState.lastUpdatedAt = testNow
 
   let store = TestStore(initialState: initialState) {
     CurrentBoardingPointFeature()
@@ -108,23 +107,6 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
     $0.isLoadingUpcomingBuses = false
     $0.lastUpdatedAt = testNow
   }
-}
-
-@MainActor
-@Test func returningToActiveKeepsFreshUpcomingBuses() async {
-  var initialState = CurrentBoardingPointFeature.State()
-  initialState.boardingPoints = [.theHyundaiSeoul]
-  initialState.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
-  initialState.hasLoadedConfiguration = true
-  initialState.lastUpdatedAt = testNow.addingTimeInterval(-59)
-
-  let store = TestStore(initialState: initialState) {
-    CurrentBoardingPointFeature()
-  } withDependencies: {
-    $0.date.now = testNow
-  }
-
-  await store.send(.appBecameActive)
 }
 
 @MainActor

@@ -137,8 +137,7 @@ struct CurrentBoardingPointFeature: Sendable {
       case .appBecameActive:
         guard state.hasLoadedConfiguration,
               state.selectedBoardingPointHasSelectedRoutes,
-              !state.isLoadingUpcomingBuses,
-              state.lastUpdatedAt.map({ now.timeIntervalSince($0) >= 60 }) ?? true
+              !state.isLoadingUpcomingBuses
         else {
           return .none
         }
