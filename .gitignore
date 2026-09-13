@@ -1,5 +1,8 @@
 # macOS
 .DS_Store
 
+# Local secrets
+/.secrets.properties
+
 # Codex local artifacts
 .codex/local/
