@@ -38,8 +38,8 @@ struct SelectBusRoutesFeature {
       self.selectedRouteIDs = Set(selectedRoutes.map(\.id))
     }
 
-    var allRoutesAreSelected: Bool {
-      !routeOptions.isEmpty && routeOptions.allSatisfy { selectedRouteIDs.contains($0.id) }
+    var canCompleteSelection: Bool {
+      !selectedRouteIDs.isEmpty
     }
   }
 
@@ -47,7 +47,6 @@ struct SelectBusRoutesFeature {
     case task
     case routeOptionsResponse(RouteOptionsResponse)
     case routeTapped(BusRoute.ID)
-    case selectAllButtonTapped
     case doneButtonTapped
     case delegate(Delegate)
 
@@ -104,15 +103,10 @@ struct SelectBusRoutesFeature {
         }
         return .none
 
-      case .selectAllButtonTapped:
-        if state.allRoutesAreSelected {
-          state.selectedRouteIDs.removeAll()
-        } else {
-          state.selectedRouteIDs = Set(state.routeOptions.map(\.id))
-        }
-        return .none
-
       case .doneButtonTapped:
+        guard state.canCompleteSelection else {
+          return .none
+        }
         let selectedRoutes = Set(
           state.routeOptions
             .filter { state.selectedRouteIDs.contains($0.id) }

@@ -4,6 +4,12 @@ import SwiftUI
 
 struct SelectBusRoutesView: View {
   let store: StoreOf<SelectBusRoutesFeature>
+  private let routeGridColumns = [
+    GridItem(
+      .adaptive(minimum: 96),
+      spacing: r.dimen.spacingXSmall
+    )
+  ]
 
   var body: some View {
     ZStack {
@@ -24,9 +30,6 @@ struct SelectBusRoutesView: View {
         .scrollIndicators(.hidden)
       }
     }
-    .safeAreaInset(edge: .bottom) {
-      selectedRouteCount
-    }
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .principal) {
@@ -43,6 +46,8 @@ struct SelectBusRoutesView: View {
         .frame(minWidth: r.dimen.minimumTouchTarget)
         .frame(minHeight: r.dimen.minimumTouchTarget)
         .buttonStyle(.plain)
+        .disabled(!store.canCompleteSelection)
+        .opacity(store.canCompleteSelection ? 1 : r.opacity.disabled)
         .accessibilityHint("선택한 노선을 정류장에 적용합니다")
       }
       .sharedBackgroundVisibility(.hidden)
@@ -56,22 +61,10 @@ struct SelectBusRoutesView: View {
 
   private var busStopSummary: some View {
     VStack(alignment: .leading, spacing: r.dimen.spacingXSmall) {
-      HStack(spacing: 0) {
-        Text(store.busStop.name)
-          .font(r.font.rowTitle)
-          .foregroundStyle(r.color.textPrimary)
-          .lineLimit(2)
-        Spacer(minLength: r.dimen.spacingXSmall)
-        Button(store.allRoutesAreSelected ? "모두 해제" : "모두 선택") {
-          store.send(.selectAllButtonTapped)
-        }
-        .font(r.font.navigationAction)
-        .foregroundStyle(r.color.brandMint)
-        .frame(minHeight: r.dimen.minimumTouchTarget)
-        .buttonStyle(.plain)
-        .disabled(store.routeOptions.isEmpty)
-        .opacity(store.routeOptions.isEmpty ? r.opacity.disabled : 1)
-      }
+      Text(store.busStop.name)
+        .font(r.font.rowTitle)
+        .foregroundStyle(r.color.textPrimary)
+        .lineLimit(2)
 
       Text(verbatim: "정류장 번호 \(store.busStop.id.stopID)")
         .font(r.font.metadata)
@@ -91,7 +84,7 @@ struct SelectBusRoutesView: View {
     } else if store.routeOptions.isEmpty {
       emptyRoutesState
     } else {
-      routeList
+      routeGrid
     }
   }
 
@@ -116,16 +109,28 @@ struct SelectBusRoutesView: View {
     .padding(.vertical, r.dimen.spacingXLarge)
   }
 
-  private var routeList: some View {
-    LazyVStack(spacing: r.dimen.spacingSmall) {
-      ForEach(store.routeOptions) { route in
-        routeRow(route)
+  private var routeGrid: some View {
+    VStack(alignment: .leading, spacing: r.dimen.spacingSmall) {
+      DashSectionHeader("노선") {
+        Text("\(store.selectedRouteIDs.count)개 선택")
+          .font(r.font.metadata)
+          .foregroundStyle(r.color.textSecondary)
+      }
+
+      LazyVGrid(
+        columns: routeGridColumns,
+        alignment: .leading,
+        spacing: r.dimen.spacingXSmall
+      ) {
+        ForEach(store.routeOptions) { route in
+          routeTile(route)
+        }
       }
     }
     .padding(.horizontal, r.dimen.spacingMedium)
   }
 
-  private func routeRow(
+  private func routeTile(
     _ route: BusRoute
   ) -> some View {
     let isSelected = store.selectedRouteIDs.contains(route.id)
@@ -133,14 +138,13 @@ struct SelectBusRoutesView: View {
     return Button {
       store.send(.routeTapped(route.id))
     } label: {
-      DashSelectableCard(
-        isSelected: isSelected,
-        minHeight: r.dimen.richRowMinHeight
-      ) {
+      DashSelectableTile(isSelected: isSelected) {
         Text(route.number)
-          .font(r.font.routeNumber)
+          .font(r.font.routeTileNumber)
           .foregroundStyle(r.color.textPrimary)
-          .frame(maxWidth: .infinity, alignment: .leading)
+          .lineLimit(1)
+          .minimumScaleFactor(0.75)
+          .frame(maxWidth: .infinity, alignment: .center)
       }
     }
     .buttonStyle(.plain)
@@ -159,16 +163,6 @@ struct SelectBusRoutesView: View {
     .padding(.horizontal, r.dimen.spacingMedium)
     .padding(.vertical, r.dimen.spacingXLarge)
   }
-
-  private var selectedRouteCount: some View {
-    Text("\(store.selectedRouteIDs.count)개 노선 선택됨")
-      .font(r.font.body)
-      .foregroundStyle(r.color.textSecondary)
-      .frame(maxWidth: .infinity)
-      .padding(.vertical, r.dimen.spacingLarge)
-      .background(r.color.background)
-  }
-
 }
 
 #Preview {

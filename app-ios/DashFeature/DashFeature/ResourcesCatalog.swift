@@ -16,7 +16,7 @@ enum r {
     static let input = Font.system(size: 20, weight: .regular)
     static let rowTitle = Font.system(size: 20, weight: .medium)
     static let selectedRowTitle = Font.system(size: 20, weight: .semibold)
-    static let routeNumber = Font.system(size: 32, weight: .semibold)
+    static let routeTileNumber = Font.system(size: 23, weight: .semibold)
     static let body = Font.system(size: 16, weight: .regular)
     static let metadata = Font.system(size: 14, weight: .regular)
     static let caption = Font.system(size: 12, weight: .regular)
@@ -44,8 +44,8 @@ enum r {
     static let richRowMinHeight: CGFloat = 88
     static let rowVerticalPadding: CGFloat = 14
     static let selectionRailWidth: CGFloat = 4
-    static let selectionIndicatorSize: CGFloat = 28
-    static let selectionIndicatorBorderWidth: CGFloat = 2
+    static let selectionTileMinHeight: CGFloat = 68
+    static let selectionTileIndicatorSize: CGFloat = 18
     static let mapMarkerSize: CGFloat = 32
     static let listMarkerSize: CGFloat = 48
     static let mapMarkerBorderWidth: CGFloat = 2

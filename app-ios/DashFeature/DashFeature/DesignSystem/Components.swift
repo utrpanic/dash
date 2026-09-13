@@ -74,54 +74,43 @@ struct DashFlatListRow<Content: View, Trailing: View>: View {
   }
 }
 
-struct DashSelectableCard<Content: View>: View {
+struct DashSelectableTile<Content: View>: View {
   let isSelected: Bool
-  let minHeight: CGFloat
   private let content: Content
 
   init(
     isSelected: Bool,
-    minHeight: CGFloat = r.dimen.standardRowMinHeight,
     @ViewBuilder content: () -> Content
   ) {
     self.isSelected = isSelected
-    self.minHeight = minHeight
     self.content = content()
   }
 
   var body: some View {
     DashGroupedSurface {
-      HStack(spacing: r.dimen.spacingSmall) {
+      ZStack(alignment: .topTrailing) {
         content
+          .padding(.horizontal, r.dimen.spacingSmall)
+          .padding(.vertical, r.dimen.spacingXSmall)
+          .frame(minHeight: r.dimen.selectionTileMinHeight)
+          .frame(maxWidth: .infinity)
 
-        ZStack {
-          Circle()
-            .fill(isSelected ? r.color.brandMint : .clear)
-          Circle()
-            .stroke(
-              isSelected ? r.color.brandMint : r.color.textSecondary,
-              lineWidth: r.dimen.selectionIndicatorBorderWidth
-            )
-          if isSelected {
+        if isSelected {
+          ZStack {
+            Circle()
+              .fill(r.color.brandMint)
             Image(systemName: "checkmark")
-              .font(.body.weight(.semibold))
+              .font(r.font.caption.weight(.semibold))
               .foregroundStyle(.white)
           }
+          .frame(
+            width: r.dimen.selectionTileIndicatorSize,
+            height: r.dimen.selectionTileIndicatorSize
+          )
+          .padding(r.dimen.spacingXSmall)
+          .accessibilityHidden(true)
         }
-        .frame(
-          width: r.dimen.selectionIndicatorSize,
-          height: r.dimen.selectionIndicatorSize
-        )
-        .frame(
-          width: r.dimen.minimumTouchTarget,
-          height: r.dimen.minimumTouchTarget
-        )
-        .accessibilityHidden(true)
       }
-      .padding(.horizontal, r.dimen.spacingMedium)
-      .padding(.vertical, r.dimen.rowVerticalPadding)
-      .frame(minHeight: minHeight)
-      .frame(maxWidth: .infinity)
       .background(isSelected ? r.color.brandMint.opacity(r.opacity.selectionBackground) : .clear)
     }
   }
