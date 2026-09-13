@@ -13,11 +13,11 @@ interface BusStopRepository {
     ): List<BusStop>
 }
 
-interface BusRouteRepository {
+fun interface BusRouteRepository {
     suspend fun fetchRoutes(busStop: BusStop): List<BusRoute>
 }
 
-interface BusArrivalRepository {
+fun interface BusArrivalRepository {
     suspend fun fetchArrivals(
         busStop: BusStop,
         routes: Set<BusRoute>,

@@ -1,16 +1,21 @@
 package dev.utrpanic.dash
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.utrpanic.dash.ui.home.DashHomeScreen
+import dev.utrpanic.dash.ui.home.DashViewModel
 import dev.utrpanic.dash.ui.theme.DashTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,29 +24,38 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DashTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val application = application as DashApplication
+                val viewModel: DashViewModel = viewModel(factory = DashViewModel.Factory(application.container))
+                val state by viewModel.state.collectAsStateWithLifecycle()
+                val context = LocalContext.current
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestMultiplePermissions(),
+                ) { viewModel.resolveFromCurrentLocation() }
+
+                LaunchedEffect(Unit) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (granted) {
+                        viewModel.resolveFromCurrentLocation()
+                    } else {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                            ),
+                        )
+                    }
                 }
+
+                DashHomeScreen(
+                    state = state,
+                    onSelectNext = viewModel::selectNextBoardingPoint,
+                    onRefresh = viewModel::refresh,
+                    onLocate = viewModel::resolveFromCurrentLocation,
+                )
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DashTheme {
-        Greeting("Android")
     }
 }
