@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
                         onSelectNext = viewModel::selectNextBoardingPoint,
                         onRefresh = viewModel::refresh,
                         onLocate = viewModel::resolveFromCurrentLocation,
+                        onEdit = { state.currentBoardingPoint?.let(viewModel::editBoardingPoint) },
                         onManage = viewModel::openBoardingPoints,
                     )
                     DashDestination.BOARDING_POINTS -> BoardingPointListScreen(

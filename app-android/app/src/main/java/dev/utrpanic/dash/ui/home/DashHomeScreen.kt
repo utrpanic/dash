@@ -1,7 +1,6 @@
 package dev.utrpanic.dash.ui.home
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,32 +10,47 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.DirectionsBus
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -44,8 +58,8 @@ import dev.utrpanic.dash.domain.model.UpcomingBus
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import kotlin.math.ceil
 import java.util.Locale
+import kotlin.math.ceil
 
 @Composable
 fun DashHomeScreen(
@@ -53,6 +67,7 @@ fun DashHomeScreen(
     onSelectNext: () -> Unit,
     onRefresh: () -> Unit,
     onLocate: () -> Unit,
+    onEdit: () -> Unit,
     onManage: () -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -62,20 +77,24 @@ fun DashHomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Scaffold { insets ->
-        Box(Modifier.fillMaxSize().padding(insets)) {
-            when {
-                state.isLoadingConfiguration -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.currentBoardingPoint == null -> EmptyHome(onLocate)
-                else -> ArrivalList(state, onSelectNext, onRefresh, onManage)
-            }
-            if (state.currentBoardingPoint != null) {
-                Row(
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    UtilityButton("현재 위치", Icons.Rounded.LocationOn, onLocate)
-                    UtilityButton("새로고침", Icons.Rounded.Refresh, onRefresh)
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { insets ->
+        Column(Modifier.fillMaxSize().padding(insets)) {
+            HomeNavigationBar(
+                state = state,
+                onSelectNext = onSelectNext,
+                onEdit = onEdit,
+                onManage = onManage,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f))
+            Box(Modifier.fillMaxSize()) {
+                HomeContent(state, onRefresh, onLocate)
+                if (state.currentBoardingPoint != null) {
+                    FloatingUtilities(
+                        lastUpdatedAt = state.lastUpdatedAt,
+                        now = state.now,
+                        onLocate = onLocate,
+                        onRefresh = onRefresh,
+                    )
                 }
             }
         }
@@ -83,48 +102,121 @@ fun DashHomeScreen(
 }
 
 @Composable
-private fun ArrivalList(
+private fun HomeNavigationBar(
     state: DashUiState,
     onSelectNext: () -> Unit,
-    onRefresh: () -> Unit,
+    onEdit: () -> Unit,
     onManage: () -> Unit,
 ) {
+    val title = when {
+        state.isLoadingConfiguration -> "위치 확인 중…"
+        state.currentBoardingPoint != null -> state.currentBoardingPoint.name
+        else -> "탑승 지점 없음"
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            onClick = onSelectNext,
+            enabled = state.currentBoardingPoint != null,
+            modifier = Modifier.widthIn(max = 220.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Row(
+                modifier = Modifier.heightIn(min = 48.dp).padding(start = 8.dp, end = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Surface(
+                    modifier = Modifier.size(36.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.Navigation,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = Color.White,
+                        )
+                    }
+                }
+                Text(
+                    title,
+                    modifier = Modifier.widthIn(max = 140.dp),
+                    color = if (state.currentBoardingPoint == null) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (state.currentBoardingPoint != null) {
+                    Icon(
+                        Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        IconButton(onClick = onEdit, enabled = state.currentBoardingPoint != null) {
+            Icon(
+                Icons.Rounded.Edit,
+                contentDescription = "현재 탑승 지점 편집",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onManage) {
+            Icon(
+                Icons.AutoMirrored.Rounded.FormatListBulleted,
+                contentDescription = "탑승 지점 목록",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeContent(
+    state: DashUiState,
+    onRefresh: () -> Unit,
+    onLocate: () -> Unit,
+) {
+    when {
+        state.isLoadingConfiguration -> LoadingState()
+        state.currentBoardingPoint == null -> EmptyHome(onLocate)
+        state.isRefreshing && state.upcomingBuses.isEmpty() -> LoadingState()
+        state.errorMessage != null -> MessageState(state.errorMessage, "다시 시도", onRefresh)
+        !state.currentBoardingPoint.hasSelectedRoutes -> {
+            MessageState("선택한 버스 노선이 없습니다.\n탑승 지점을 편집해 노선을 선택하세요.")
+        }
+        state.upcomingBuses.isEmpty() -> MessageState("도착 예정인 버스가 없습니다.")
+        else -> ArrivalList(state.upcomingBuses)
+    }
+}
+
+@Composable
+private fun LoadingState() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ArrivalList(buses: List<UpcomingBus>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp, 24.dp, 16.dp, 104.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 176.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).clickable(onClick = onSelectNext).padding(vertical = 8.dp)) {
-                    Text(state.currentBoardingPoint?.name.orEmpty(), style = MaterialTheme.typography.headlineMedium)
-                    state.lastUpdatedAt?.let {
-                        Text(elapsedText(it, state.now), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                FilledIconButton(onClick = onManage) { Icon(Icons.Rounded.Menu, contentDescription = "탑승 지점 목록") }
-            }
-        }
-        state.errorMessage?.let { message ->
-            item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(message)
-                        Button(onClick = onRefresh) { Text("재시도") }
-                    }
-                }
-            }
-        }
-        if (state.isRefreshing && state.upcomingBuses.isEmpty()) {
-            item { CircularProgressIndicator(Modifier.padding(24.dp)) }
-        } else if (!state.isRefreshing && state.errorMessage == null && state.upcomingBuses.isEmpty()) {
-            item { Text("도착 예정 버스가 없습니다.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        }
-        items(state.upcomingBuses, key = UpcomingBus::id) { ArrivalCard(it) }
+        items(buses, key = UpcomingBus::id) { ArrivalCard(it) }
     }
 }
 
@@ -138,25 +230,65 @@ private fun ArrivalCard(bus: UpcomingBus) {
         else -> FontWeight.Light
     }
     Card(
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)),
         shape = RoundedCornerShape(16.dp),
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(20.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column {
-                Text(bus.busRoute.number, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.SemiBold)
-                Text(bus.busStop.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${minutes}분", style = MaterialTheme.typography.displayMedium, fontWeight = weight)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 Text(
-                    DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN)
-                        .format(java.time.ZonedDateTime.now().plusSeconds(seconds)),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    bus.busRoute.number,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 40.sp,
+                    lineHeight = 48.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.AccessTime,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        DateTimeFormatter.ofPattern("a h:mm", Locale.KOREAN)
+                            .format(java.time.ZonedDateTime.now().plusSeconds(seconds)),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    minutes.toString(),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 48.sp,
+                    lineHeight = 56.sp,
+                    fontWeight = weight,
+                )
+                Text(
+                    "분",
+                    modifier = Modifier.padding(bottom = 5.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 24.sp,
+                    lineHeight = 32.sp,
+                    fontWeight = weight,
                 )
             }
         }
@@ -164,23 +296,99 @@ private fun ArrivalCard(bus: UpcomingBus) {
 }
 
 @Composable
-private fun UtilityButton(label: String, icon: ImageVector, action: () -> Unit) {
-    FilledIconButton(onClick = action, modifier = Modifier.shadow(8.dp, CircleShape), shape = CircleShape) {
-        Icon(icon, contentDescription = label)
+private fun FloatingUtilities(
+    lastUpdatedAt: Instant?,
+    now: Instant,
+    onLocate: () -> Unit,
+    onRefresh: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(end = 24.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.End,
+    ) {
+        UtilityButton(
+            label = "현재 위치",
+            icon = Icons.Rounded.Navigation,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary,
+            action = onLocate,
+        )
+        Spacer(Modifier.height(16.dp))
+        UtilityButton(
+            label = "새로고침",
+            icon = Icons.Rounded.Refresh,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White,
+            action = onRefresh,
+        )
+        lastUpdatedAt?.let {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                elapsedText(it, now),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UtilityButton(
+    label: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color,
+    action: () -> Unit,
+) {
+    FilledIconButton(
+        onClick = action,
+        modifier = Modifier.size(64.dp).shadow(8.dp, CircleShape),
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+    ) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
+    }
+}
+
+@Composable
+private fun MessageState(
+    message: String,
+    actionTitle: String? = null,
+    action: (() -> Unit)? = null,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Rounded.DirectionsBus,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 16.sp,
+            lineHeight = 24.sp,
+            textAlign = TextAlign.Center,
+        )
+        if (actionTitle != null && action != null) {
+            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = action) { Text(actionTitle) }
+        }
     }
 }
 
 @Composable
 private fun EmptyHome(onLocate: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("표시할 탑승 지점이 없습니다.")
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onLocate) { Text("다시 시도") }
-    }
+    MessageState("표시할 탑승 지점이 없습니다.", "다시 시도", onLocate)
 }
 
 private fun elapsedText(updatedAt: Instant, now: Instant): String {
