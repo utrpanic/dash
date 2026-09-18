@@ -50,6 +50,8 @@ class DashAppFlowTest {
         composeRule.onNodeWithText("테스트 지점").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("영등포역 편집").performClick()
+        composeRule.onNodeWithText("1개 · 5개 노선").assertIsDisplayed()
+        composeRule.onNodeWithText("선택 노선").assertIsDisplayed()
         composeRule.onNodeWithTag("edit-stop-seoul-118000005-19005").performClick()
         composeRule.onNodeWithTag("select-bus-routes-screen").assertIsDisplayed()
         composeRule.onNodeWithText("5개 선택").assertIsDisplayed()
