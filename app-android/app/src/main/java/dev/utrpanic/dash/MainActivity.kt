@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                         onBack = viewModel::showHome,
                         onSelect = viewModel::selectBoardingPoint,
                         onEdit = viewModel::editBoardingPoint,
+                        onDelete = viewModel::deleteBoardingPoint,
                         onAdd = viewModel::addBoardingPoint,
                     )
                     DashDestination.EDIT_BOARDING_POINT -> BoardingPointEditScreen(

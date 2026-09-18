@@ -373,6 +373,14 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
 
     fun deleteDraft() {
         val id = _state.value.draft?.originalId ?: return
+        deleteBoardingPointById(id)
+    }
+
+    fun deleteBoardingPoint(point: BoardingPoint) {
+        deleteBoardingPointById(point.id)
+    }
+
+    private fun deleteBoardingPointById(id: String) {
         if (_state.value.boardingPoints.size <= 1 || _state.value.isSaving) return
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, errorMessage = null) }
@@ -384,17 +392,21 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                 container.boardingPointRepository.saveConfiguration(updated)
                 updated
             }.onSuccess { configuration ->
-                _state.update {
-                    it.copy(
+                val currentPoint = configuration.boardingPoints.firstOrNull { point ->
+                    point.id == configuration.currentBoardingPointId
+                }
+                val currentChanged = currentPoint?.id != _state.value.currentBoardingPoint?.id
+                _state.update { state ->
+                    state.copy(
                         isSaving = false,
                         boardingPoints = configuration.boardingPoints,
-                        currentBoardingPoint = configuration.boardingPoints.firstOrNull { point ->
-                            point.id == configuration.currentBoardingPointId
-                        },
+                        currentBoardingPoint = currentPoint,
+                        upcomingBuses = if (currentChanged) emptyList() else state.upcomingBuses,
                         destination = DashDestination.BOARDING_POINTS,
                         draft = null,
                     )
                 }
+                if (currentChanged) refresh()
             }.onFailure {
                 _state.update { it.copy(isSaving = false, errorMessage = "탑승 지점을 삭제하지 못했습니다.") }
             }

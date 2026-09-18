@@ -37,6 +37,10 @@ class DashAppFlowTest {
             composeRule.onAllNodesWithContentDescription("영등포역 편집").fetchSemanticsNodes().isNotEmpty()
         }
 
+        composeRule.onNodeWithContentDescription("영등포역 삭제").performClick()
+        composeRule.onNodeWithText("탑승 지점을 삭제할까요?").assertIsDisplayed()
+        composeRule.onNodeWithText("취소").performClick()
+
         composeRule.onNodeWithContentDescription("탑승 지점 추가").performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("테스트 지점")
         composeRule.onNodeWithText("저장").performClick()
