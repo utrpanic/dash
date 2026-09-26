@@ -278,6 +278,8 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
 
     fun openRouteSelection(stop: dev.utrpanic.dash.domain.model.BusStop) {
         val storedRoutes = _state.value.draft?.routes?.get(stop).orEmpty()
+            .distinctBy { it.region to it.id }
+            .toSet()
         _state.update {
             it.copy(
                 destination = DashDestination.SELECT_BUS_ROUTES,
@@ -294,7 +296,9 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                     if (_state.value.routeSelectionStop == stop) {
                         _state.update { state ->
                             state.copy(
-                                routeCandidates = (fetched + storedRoutes).distinct().sortedWith(
+                                routeCandidates = (fetched + storedRoutes)
+                                    .distinctBy { it.region to it.id }
+                                    .sortedWith(
                                     dev.utrpanic.dash.domain.model.BusRouteNaturalComparator,
                                 ),
                                 isLoadingRouteCandidates = false,

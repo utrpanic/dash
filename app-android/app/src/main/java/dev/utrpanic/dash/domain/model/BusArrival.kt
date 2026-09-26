@@ -31,13 +31,16 @@ data class BusArrival(
     fun upcomingBuses(
         boardingPoint: BoardingPoint,
         busStop: BusStop,
-    ): List<UpcomingBus> = listOfNotNull(firstPrediction, secondPrediction).mapNotNull { prediction ->
+    ): List<UpcomingBus> = listOf(firstPrediction, secondPrediction).mapIndexedNotNull { index, prediction ->
+        prediction ?: return@mapIndexedNotNull null
         prediction.timeUntilArrival?.let { duration ->
             UpcomingBus(
                 boardingPoint = boardingPoint,
                 busStop = busStop,
                 busRoute = route,
                 timeUntilArrival = duration,
+                sourceArrivalId = id,
+                predictionIndex = index,
             )
         }
     }
@@ -48,8 +51,10 @@ data class UpcomingBus(
     val busStop: BusStop,
     val busRoute: BusRoute,
     val timeUntilArrival: Duration,
+    val sourceArrivalId: String,
+    val predictionIndex: Int,
 ) {
-    val id = "${boardingPoint.id}-${busStop.id.storageKey}-${busRoute.region.name}-${busRoute.id}-$timeUntilArrival"
+    val id = "${boardingPoint.id}-${busStop.id.storageKey}-$sourceArrivalId-$predictionIndex"
 }
 
 fun Iterable<UpcomingBus>.sortedByArrival(): List<UpcomingBus> = sortedBy(UpcomingBus::timeUntilArrival)

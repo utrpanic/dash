@@ -36,11 +36,25 @@ class LiveBusRepositoriesTest {
     }
 
     @Test
+    fun routesRemoveDuplicateDomainIds() = runBlocking {
+        val first = BusRoute(212000001, "0017", ServiceRegion.SEOUL)
+        val duplicate = first.copy(number = "17")
+        val repository = LiveBusRouteRepository(
+            gyeonggiApi = FakeGyeonggiBusApi(),
+            seoulApi = FakeSeoulBusApi(routeResult = listOf(first, duplicate)),
+        )
+
+        assertEquals(listOf(first), repository.fetchRoutes(seoulStop()))
+    }
+
+    @Test
     fun gyeonggiArrivalsAreFilteredToSelectedRoutes() = runBlocking {
         val selected = route(1, ServiceRegion.GYEONGGI)
         val other = route(2, ServiceRegion.GYEONGGI)
         val repository = LiveBusArrivalRepository(
-            gyeonggiApi = FakeGyeonggiBusApi(arrivalResult = listOf(arrival(selected), arrival(other))),
+            gyeonggiApi = FakeGyeonggiBusApi(
+                arrivalResult = listOf(arrival(selected), arrival(selected), arrival(other)),
+            ),
             seoulApi = FakeSeoulBusApi(),
         )
 
@@ -89,6 +103,7 @@ class LiveBusRepositoriesTest {
 
     private class FakeSeoulBusApi(
         private val failure: Exception? = null,
+        private val routeResult: List<BusRoute> = emptyList(),
         private val arrivals: Map<Long, List<BusArrival>> = emptyMap(),
         private val failedRouteId: Long? = null,
     ) : SeoulBusApi {
@@ -98,7 +113,7 @@ class LiveBusRepositoriesTest {
             nearbyCallCount += 1
             return failure?.let { throw it } ?: emptyList()
         }
-        override suspend fun fetchRoutes(arsId: String) = emptyList<BusRoute>()
+        override suspend fun fetchRoutes(arsId: String) = routeResult
         override suspend fun fetchArrivalsByRoute(routeId: Long): List<BusArrival> {
             if (routeId == failedRouteId) throw IllegalStateException()
             return arrivals[routeId].orEmpty()

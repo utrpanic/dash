@@ -54,7 +54,7 @@ class LiveBusRouteRepository(
     override suspend fun fetchRoutes(busStop: BusStop): List<BusRoute> = when (val id = busStop.id) {
         is BusStopId.Gyeonggi -> gyeonggiApi.fetchRoutes(id.stopId)
         is BusStopId.Seoul -> seoulApi.fetchRoutes(id.arsId)
-    }
+    }.distinctBy { it.region to it.id }
 }
 
 class LiveBusArrivalRepository(
@@ -66,7 +66,9 @@ class LiveBusArrivalRepository(
         return when (val id = busStop.id) {
             is BusStopId.Gyeonggi -> {
                 val routeIds = routes.mapTo(mutableSetOf(), BusRoute::id)
-                gyeonggiApi.fetchArrivals(id.stopId).filter { it.route.id in routeIds }
+                gyeonggiApi.fetchArrivals(id.stopId)
+                    .filter { it.route.id in routeIds }
+                    .distinctBy(BusArrival::id)
             }
 
             is BusStopId.Seoul -> fetchSeoulArrivals(id.stopId, routes)
@@ -83,7 +85,7 @@ class LiveBusArrivalRepository(
         if (results.none(Result<List<BusArrival>>::isSuccess)) {
             throw BusRepositoryUnavailableException()
         }
-        results.flatMap { it.getOrDefault(emptyList()) }
+        results.flatMap { it.getOrDefault(emptyList()) }.distinctBy(BusArrival::id)
     }
 }
 

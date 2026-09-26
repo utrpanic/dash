@@ -59,6 +59,19 @@ class DomainModelTest {
         assertEquals(listOf(95.seconds), arrival.upcomingBuses(boardingPoint, stop).map { it.timeUntilArrival })
     }
 
+    @Test
+    fun predictionsWithTheSameArrivalTimeHaveDistinctIds() {
+        val stop = stop(id = 1)
+        val route = route()
+        val boardingPoint = BoardingPoint("commute", "출근", mapOf(stop to setOf(route)))
+        val prediction = prediction(minutes = 0, seconds = 0)
+        val arrival = BusArrival(1, route, 3, "", prediction, prediction)
+
+        val ids = arrival.upcomingBuses(boardingPoint, stop).map(UpcomingBus::id)
+
+        assertEquals(2, ids.distinct().size)
+    }
+
     private fun stop(
         id: Long,
         latitude: Double = 37.0,
