@@ -59,5 +59,6 @@ class DashAppFlowTest {
         pressBack()
         composeRule.onNodeWithText("정류장 추가").performClick()
         composeRule.onNodeWithTag("add-bus-stop-screen").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("정류장 검색").assertIsDisplayed()
     }
 }
