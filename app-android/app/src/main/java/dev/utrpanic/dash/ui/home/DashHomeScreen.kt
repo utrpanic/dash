@@ -1,6 +1,7 @@
 package dev.utrpanic.dash.ui.home
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -310,9 +311,10 @@ private fun FloatingUtilities(
         UtilityButton(
             label = "현재 위치",
             icon = Icons.Rounded.Navigation,
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.primary,
             action = onLocate,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
         )
         Spacer(Modifier.height(16.dp))
         UtilityButton(
@@ -341,10 +343,11 @@ private fun UtilityButton(
     containerColor: Color,
     contentColor: Color,
     action: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     FilledIconButton(
         onClick = action,
-        modifier = Modifier.size(64.dp).shadow(8.dp, CircleShape),
+        modifier = Modifier.size(64.dp).shadow(8.dp, CircleShape).then(modifier),
         shape = CircleShape,
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = containerColor,
