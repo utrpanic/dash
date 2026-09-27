@@ -32,7 +32,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.utrpanic.dash.domain.model.BusRoute
 import dev.utrpanic.dash.ui.home.DashUiState
 
@@ -54,26 +57,61 @@ fun SelectBusRoutesScreen(
 ) {
     BackHandler(onBack = onBack)
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text("버스 노선 선택") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "뒤로") } },
-                actions = {
-                    TextButton(onClick = onComplete, enabled = state.selectedRoutes.isNotEmpty()) { Text("완료") }
-                },
-            )
+            Column {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            "버스 노선 선택",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Normal,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, "뒤로")
+                        }
+                    },
+                    actions = {
+                        val canComplete = state.selectedRoutes.isNotEmpty()
+                        TextButton(onClick = onComplete, enabled = canComplete) {
+                            Text(
+                                "완료",
+                                color = MaterialTheme.colorScheme.primary.copy(
+                                    alpha = if (canComplete) 1f else 0.45f,
+                                ),
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f))
+            }
         },
     ) { insets ->
         Column(Modifier.fillMaxSize().padding(insets).testTag("select-bus-routes-screen")) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(state.routeSelectionStop?.name.orEmpty(), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    state.routeSelectionStop?.name.orEmpty(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 20.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Medium,
+                )
                 Text(
                     "정류장 번호 ${state.routeSelectionStop?.id?.stopId.orEmptyText()}",
+                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("경유 노선", style = MaterialTheme.typography.titleMedium)
-                    Text("${state.selectedRoutes.size}개 선택", color = MaterialTheme.colorScheme.primary)
+                    Text("경유 노선", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text("${state.selectedRoutes.size}개 선택", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                 }
             }
             when {
@@ -102,7 +140,7 @@ fun SelectBusRoutesScreen(
                         Card(
                             modifier = Modifier.heightIn(min = 68.dp).clickable { onToggle(route) },
                             shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                                 else MaterialTheme.colorScheme.surface,
