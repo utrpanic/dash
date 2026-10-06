@@ -78,10 +78,11 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   }
 
   await store.send(.loadUpcomingBuses) {
+    $0.upcomingBusesRequestID = 1
     $0.isLoadingUpcomingBuses = true
     $0.upcomingBusesErrorMessage = nil
   }
-  await store.receive(.loadUpcomingBusesResponse(.success([expectedUpcomingBus]))) {
+  await store.receive(.loadUpcomingBusesResponse(requestID: 1, boardingPoint: boardingPoint, .success([expectedUpcomingBus]))) {
     $0.isLoadingUpcomingBuses = false
     $0.upcomingBuses = [expectedUpcomingBus]
     $0.upcomingBusesErrorMessage = nil
@@ -139,9 +140,10 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
   }
 
   await store.send(.loadUpcomingBuses) {
+    $0.upcomingBusesRequestID = 1
     $0.isLoadingUpcomingBuses = true
   }
-  await store.receive(.loadUpcomingBusesResponse(.success([expectedBus]))) {
+  await store.receive(.loadUpcomingBusesResponse(requestID: 1, boardingPoint: boardingPoint, .success([expectedBus]))) {
     $0.isLoadingUpcomingBuses = false
     $0.upcomingBuses = [expectedBus]
     $0.lastUpdatedAt = testNow
@@ -164,10 +166,11 @@ private let testNow = Date(timeIntervalSinceReferenceDate: 0)
 
   await store.send(.appBecameActive)
   await store.receive(.loadUpcomingBuses) {
+    $0.upcomingBusesRequestID = 1
     $0.isLoadingUpcomingBuses = true
     $0.upcomingBusesErrorMessage = nil
   }
-  await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+  await store.receive(.loadUpcomingBusesResponse(requestID: 1, boardingPoint: .theHyundaiSeoul, .success([]))) {
     $0.isLoadingUpcomingBuses = false
     $0.lastUpdatedAt = testNow
   }

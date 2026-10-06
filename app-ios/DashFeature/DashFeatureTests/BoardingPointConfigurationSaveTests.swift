@@ -333,8 +333,10 @@ private actor ControlledConfigurationSaveRecorder {
       $0.configurationSaveInFlight = locationConfiguration
       $0.isRequestingUserLocation = false
     }
-    await store.receive(.loadUpcomingBuses)
-    await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+    await store.receive(.loadUpcomingBuses) {
+      $0.upcomingBusesRequestID = 1
+    }
+    await store.receive(.loadUpcomingBusesResponse(requestID: 1, boardingPoint: .suwonStation, .success([]))) {
       $0.isLoadingUpcomingBuses = false
       $0.lastUpdatedAt = selectionPolicyTestNow
     }
@@ -378,8 +380,10 @@ private actor ControlledConfigurationSaveRecorder {
       $0.boardingPointSelection = .selected(BoardingPoint.theHyundaiSeoul.id)
       $0.isRequestingUserLocation = false
     }
-    await store.receive(.loadUpcomingBuses)
-    await store.receive(.loadUpcomingBusesResponse(.success([]))) {
+    await store.receive(.loadUpcomingBuses) {
+      $0.upcomingBusesRequestID = 1
+    }
+    await store.receive(.loadUpcomingBusesResponse(requestID: 1, boardingPoint: .theHyundaiSeoul, .success([]))) {
       $0.isLoadingUpcomingBuses = false
       $0.lastUpdatedAt = selectionPolicyTestNow
     }

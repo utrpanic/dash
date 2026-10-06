@@ -8,6 +8,8 @@ import dev.utrpanic.dash.domain.model.BoardingPoint
 import dev.utrpanic.dash.domain.model.UpcomingBus
 import dev.utrpanic.dash.domain.usecase.FetchUpcomingBuses
 import dev.utrpanic.dash.domain.usecase.ResolveCurrentBoardingPoint
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,15 +55,30 @@ data class DashUiState(
     val routeSelectionError: String? = null,
 )
 
-class DashViewModel(private val container: DashContainer) : ViewModel() {
-    private val resolveCurrent = ResolveCurrentBoardingPoint(
+class DashViewModel internal constructor(
+    private val boardingPointRepository: dev.utrpanic.dash.domain.repository.BoardingPointRepository,
+    private val locationProvider: dev.utrpanic.dash.domain.location.UserLocationProvider,
+    private val busArrivalRepository: dev.utrpanic.dash.domain.repository.BusArrivalRepository,
+    private val busStopRepository: dev.utrpanic.dash.domain.repository.BusStopRepository,
+    private val busRouteRepository: dev.utrpanic.dash.domain.repository.BusRouteRepository,
+) : ViewModel() {
+    constructor(container: DashContainer) : this(
         container.boardingPointRepository,
         container.locationProvider,
+        container.busArrivalRepository,
+        container.busStopRepository,
+        container.busRouteRepository,
     )
-    private val fetchUpcoming = FetchUpcomingBuses(container.busArrivalRepository)
+
+    private val resolveCurrent = ResolveCurrentBoardingPoint(
+        boardingPointRepository,
+        locationProvider,
+    )
+    private val fetchUpcoming = FetchUpcomingBuses(busArrivalRepository)
     private val _state = MutableStateFlow(DashUiState())
     val state: StateFlow<DashUiState> = _state.asStateFlow()
     private var refreshJob: Job? = null
+    private var refreshRequestId = 0L
     private var stopSearchJob: Job? = null
 
     init {
@@ -82,10 +99,10 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                         it.copy(
                             isLoadingConfiguration = false,
                             currentBoardingPoint = resolution.boardingPoint,
-                            boardingPoints = container.boardingPointRepository.loadConfiguration().boardingPoints,
+                            boardingPoints = boardingPointRepository.loadConfiguration().boardingPoints,
                         )
                     }
-                    refresh()
+                    refresh(replaceRequest = true)
                 }
                 .onFailure {
                     _state.update {
@@ -95,15 +112,26 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
         }
     }
 
-    fun refresh() {
-        val point = _state.value.currentBoardingPoint ?: return
-        if (_state.value.isRefreshing) return
+    fun refresh() = refresh(replaceRequest = false)
+
+    private fun refresh(replaceRequest: Boolean) {
+        if (!replaceRequest && _state.value.isRefreshing) return
+        val requestId = ++refreshRequestId
         refreshJob?.cancel()
+        val point = _state.value.currentBoardingPoint
+        if (replaceRequest) {
+            _state.update {
+                it.copy(upcomingBuses = emptyList(), lastUpdatedAt = null, isRefreshing = false, errorMessage = null)
+            }
+        }
+        if (point == null) return
         refreshJob = viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true, errorMessage = null) }
             runCatching { fetchUpcoming(point) }
                 .onSuccess { buses ->
+                    ensureActive()
                     _state.update {
+                        if (requestId != refreshRequestId || it.currentBoardingPoint != point) return@update it
                         it.copy(
                             upcomingBuses = buses,
                             isRefreshing = false,
@@ -112,8 +140,11 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                         )
                     }
                 }
-                .onFailure {
+                .onFailure { exception ->
+                    if (exception is CancellationException) throw exception
+                    ensureActive()
                     _state.update {
+                        if (requestId != refreshRequestId || it.currentBoardingPoint != point) return@update it
                         it.copy(isRefreshing = false, errorMessage = "도착 정보를 불러오지 못했습니다.")
                     }
                 }
@@ -122,22 +153,22 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
 
     fun selectNextBoardingPoint() {
         viewModelScope.launch {
-            val configuration = container.boardingPointRepository.loadConfiguration()
+            val configuration = boardingPointRepository.loadConfiguration()
             val validPoints = configuration.boardingPoints.filter(BoardingPoint::hasSelectedRoutes)
             if (validPoints.isEmpty()) return@launch
             val currentIndex = validPoints.indexOfFirst { it.id == _state.value.currentBoardingPoint?.id }
             val next = validPoints[(currentIndex + 1).mod(validPoints.size)]
-            container.boardingPointRepository.saveConfiguration(
+            boardingPointRepository.saveConfiguration(
                 configuration.copy(currentBoardingPointId = next.id),
             )
             _state.update { it.copy(currentBoardingPoint = next, upcomingBuses = emptyList()) }
-            refresh()
+            refresh(replaceRequest = true)
         }
     }
 
     fun openBoardingPoints() {
         viewModelScope.launch {
-            runCatching { container.boardingPointRepository.loadConfiguration() }
+            runCatching { boardingPointRepository.loadConfiguration() }
                 .onSuccess { configuration ->
                     _state.update {
                         it.copy(
@@ -157,12 +188,12 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
 
     fun selectBoardingPoint(point: BoardingPoint) {
         viewModelScope.launch {
-            val configuration = container.boardingPointRepository.loadConfiguration()
-            container.boardingPointRepository.saveConfiguration(configuration.copy(currentBoardingPointId = point.id))
+            val configuration = boardingPointRepository.loadConfiguration()
+            boardingPointRepository.saveConfiguration(configuration.copy(currentBoardingPointId = point.id))
             _state.update {
                 it.copy(destination = DashDestination.HOME, currentBoardingPoint = point, upcomingBuses = emptyList())
             }
-            refresh()
+            refresh(replaceRequest = true)
         }
     }
 
@@ -209,8 +240,8 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
         stopSearchJob = viewModelScope.launch {
             _state.update { it.copy(isLoadingStops = true) }
             runCatching {
-                val location = container.locationProvider.currentLocation()
-                container.busStopRepository.fetchNearbyStops(location.latitude, location.longitude).take(26)
+                val location = locationProvider.currentLocation()
+                busStopRepository.fetchNearbyStops(location.latitude, location.longitude).take(26)
             }.onSuccess { stops ->
                 _state.update { it.copy(stopResults = stops, isLoadingStops = false) }
             }.onFailure {
@@ -232,7 +263,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
             kotlinx.coroutines.delay(350)
             if (query.trim().isEmpty()) return@launch
             _state.update { it.copy(isLoadingStops = true, stopSearchError = null) }
-            runCatching { container.busStopRepository.searchStops(query).take(26) }
+            runCatching { busStopRepository.searchStops(query).take(26) }
                 .onSuccess { stops -> _state.update { it.copy(stopResults = stops, isLoadingStops = false) } }
                 .onFailure {
                     _state.update {
@@ -247,7 +278,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
             it.copy(selectedStop = stop, selectedStopRoutes = emptyList(), isLoadingStopRoutes = true)
         }
         viewModelScope.launch {
-            runCatching { container.busRouteRepository.fetchRoutes(stop) }
+            runCatching { busRouteRepository.fetchRoutes(stop) }
                 .onSuccess { routes ->
                     if (_state.value.selectedStop == stop) {
                         _state.update { it.copy(selectedStopRoutes = routes, isLoadingStopRoutes = false) }
@@ -291,7 +322,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
             )
         }
         viewModelScope.launch {
-            runCatching { container.busRouteRepository.fetchRoutes(stop) }
+            runCatching { busRouteRepository.fetchRoutes(stop) }
                 .onSuccess { fetched ->
                     if (_state.value.routeSelectionStop == stop) {
                         _state.update { state ->
@@ -350,16 +381,17 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, errorMessage = null) }
             runCatching {
-                val configuration = container.boardingPointRepository.loadConfiguration()
+                val configuration = boardingPointRepository.loadConfiguration()
                 val point = BoardingPoint(draft.originalId ?: UUID.randomUUID().toString().lowercase(), name, draft.routes)
                 val points = if (draft.originalId == null) {
                     configuration.boardingPoints + point
                 } else {
                     configuration.boardingPoints.map { if (it.id == draft.originalId) point else it }
                 }
-                container.boardingPointRepository.saveConfiguration(configuration.copy(boardingPoints = points))
+                boardingPointRepository.saveConfiguration(configuration.copy(boardingPoints = points))
                 configuration.copy(boardingPoints = points) to point
             }.onSuccess { (configuration, point) ->
+                val currentChanged = _state.value.currentBoardingPoint?.let { it.id == point.id && it != point } == true
                 _state.update { state ->
                     state.copy(
                         isSaving = false,
@@ -369,6 +401,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                         draft = null,
                     )
                 }
+                if (currentChanged) refresh(replaceRequest = true)
             }.onFailure {
                 _state.update { it.copy(isSaving = false, errorMessage = "탑승 지점을 저장하지 못했습니다.") }
             }
@@ -389,11 +422,11 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, errorMessage = null) }
             runCatching {
-                val configuration = container.boardingPointRepository.loadConfiguration()
+                val configuration = boardingPointRepository.loadConfiguration()
                 val points = configuration.boardingPoints.filterNot { it.id == id }
                 val currentId = configuration.currentBoardingPointId.takeUnless { it == id } ?: points.firstOrNull()?.id
                 val updated = configuration.copy(boardingPoints = points, currentBoardingPointId = currentId)
-                container.boardingPointRepository.saveConfiguration(updated)
+                boardingPointRepository.saveConfiguration(updated)
                 updated
             }.onSuccess { configuration ->
                 val currentPoint = configuration.boardingPoints.firstOrNull { point ->
@@ -410,7 +443,7 @@ class DashViewModel(private val container: DashContainer) : ViewModel() {
                         draft = null,
                     )
                 }
-                if (currentChanged) refresh()
+                if (currentChanged) refresh(replaceRequest = true)
             }.onFailure {
                 _state.update { it.copy(isSaving = false, errorMessage = "탑승 지점을 삭제하지 못했습니다.") }
             }

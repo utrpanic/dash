@@ -24,6 +24,7 @@ struct CurrentBoardingPointFeature: Sendable {
     var isLoadingConfiguration: Bool
     var isRequestingUserLocation: Bool
     var upcomingBuses: [UpcomingBus]
+    var upcomingBusesRequestID = 0
     var isLoadingUpcomingBuses: Bool
     var upcomingBusesErrorMessage: String?
     var lastUpdatedAt: Date?
@@ -80,7 +81,7 @@ struct CurrentBoardingPointFeature: Sendable {
     case configurationSaveErrorDismissed
     case configurationSaveResponse(ConfigurationSaveResponse)
     case loadUpcomingBuses
-    case loadUpcomingBusesResponse(UpcomingBusesResponse)
+    case loadUpcomingBusesResponse(requestID: Int, boardingPoint: BoardingPoint, UpcomingBusesResponse)
     case locationButtonTapped
     case nextBoardingPointButtonTapped
     case refreshButtonTapped
@@ -199,7 +200,7 @@ struct CurrentBoardingPointFeature: Sendable {
               )
         else {
           state.isLoadingUpcomingBuses = false
-          return .none
+          return .cancel(id: CancelID.loadUpcomingBuses)
         }
 
         guard state.selectedBoardingPointHasSelectedRoutes else {
@@ -210,29 +211,48 @@ struct CurrentBoardingPointFeature: Sendable {
           return .cancel(id: CancelID.loadUpcomingBuses)
         }
 
+        state.upcomingBusesRequestID += 1
+        let requestID = state.upcomingBusesRequestID
         state.isLoadingUpcomingBuses = true
         state.upcomingBusesErrorMessage = nil
 
         return .run { send in
           do {
             let upcomingBuses = try await self.fetchUpcomingBuses(boardingPoint: boardingPoint)
-            await send(.loadUpcomingBusesResponse(.success(upcomingBuses)))
+            try Task.checkCancellation()
+            await send(.loadUpcomingBusesResponse(
+              requestID: requestID,
+              boardingPoint: boardingPoint,
+              .success(upcomingBuses)
+            ))
           } catch {
-            await send(.loadUpcomingBusesResponse(.failure(String(describing: error))))
+            guard !Task.isCancelled else { return }
+            await send(.loadUpcomingBusesResponse(
+              requestID: requestID,
+              boardingPoint: boardingPoint,
+              .failure(String(describing: error))
+            ))
           }
         }
         .cancellable(id: CancelID.loadUpcomingBuses, cancelInFlight: true)
 
-      case let .loadUpcomingBusesResponse(.success(upcomingBuses)):
+      case let .loadUpcomingBusesResponse(requestID, boardingPoint, response):
+        guard requestID == state.upcomingBusesRequestID,
+              state.isLoadingUpcomingBuses,
+              state.selectedBoardingPointID == boardingPoint.id,
+              state.boardingPoints.first(where: { $0.id == boardingPoint.id }) == boardingPoint
+        else {
+          return .none
+        }
         state.isLoadingUpcomingBuses = false
-        state.upcomingBuses = upcomingBuses
-        state.upcomingBusesErrorMessage = nil
-        state.lastUpdatedAt = now
-        return .none
-
-      case .loadUpcomingBusesResponse(.failure):
-        state.isLoadingUpcomingBuses = false
-        state.upcomingBusesErrorMessage = "도착 정보를 불러오지 못했습니다."
+        switch response {
+        case let .success(upcomingBuses):
+          state.upcomingBuses = upcomingBuses
+          state.upcomingBusesErrorMessage = nil
+          state.lastUpdatedAt = now
+        case .failure:
+          state.upcomingBusesErrorMessage = "도착 정보를 불러오지 못했습니다."
+        }
         return .none
 
       case .locationButtonTapped:
@@ -279,6 +299,7 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
 
+        invalidateUpcomingBuses(state: &state)
         state.boardingPointSelection = .selected(nextBoardingPoint.id)
         state.lastUpdatedAt = nil
         return .merge(
@@ -302,6 +323,7 @@ struct CurrentBoardingPointFeature: Sendable {
 
       case let .boardingPointSelected(boardingPointID):
         if boardingPointID != state.selectedBoardingPointID {
+          invalidateUpcomingBuses(state: &state)
           state.lastUpdatedAt = nil
         }
         state.boardingPointSelection = .selected(boardingPointID)
@@ -359,6 +381,7 @@ struct CurrentBoardingPointFeature: Sendable {
         guard boardingPoint.id == state.selectedBoardingPointID else {
           return saveEffect
         }
+        invalidateUpcomingBuses(state: &state)
         state.lastUpdatedAt = nil
         return .merge(
           saveEffect,
@@ -366,6 +389,7 @@ struct CurrentBoardingPointFeature: Sendable {
         )
 
       case let .setCurrentBoardingPoint(boardingPoint):
+        invalidateUpcomingBuses(state: &state)
         state.boardingPointSelection = .selected(boardingPoint.id)
         state.lastUpdatedAt = nil
         return .merge(
@@ -424,6 +448,7 @@ struct CurrentBoardingPointFeature: Sendable {
           return .none
         }
         if nearestBoardingPointID != state.selectedBoardingPointID {
+          invalidateUpcomingBuses(state: &state)
           state.lastUpdatedAt = nil
         }
         state.boardingPointSelection = .selected(nearestBoardingPointID)
@@ -452,6 +477,15 @@ struct CurrentBoardingPointFeature: Sendable {
 }
 
 private extension CurrentBoardingPointFeature {
+  func invalidateUpcomingBuses(state: inout State) {
+    // Reject queued responses immediately, before the next load action starts.
+    if state.isLoadingUpcomingBuses && state.upcomingBusesRequestID > 0 {
+      state.upcomingBusesRequestID += 1
+    }
+    state.upcomingBuses = []
+    state.upcomingBusesErrorMessage = nil
+  }
+
   func recoverFromLocationFailure(
     state: inout State,
     unavailableSelection: State.BoardingPointSelection
