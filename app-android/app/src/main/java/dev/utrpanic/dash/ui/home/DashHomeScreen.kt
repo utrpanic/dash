@@ -64,6 +64,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import dev.utrpanic.dash.domain.model.UpcomingBus
+import dev.utrpanic.dash.ui.theme.LocalDashDarkTheme
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -314,6 +315,7 @@ private fun FloatingUtilities(
     onLocate: () -> Unit,
     onRefresh: () -> Unit,
 ) {
+    val darkTheme = LocalDashDarkTheme.current
     val buttonsEnabled = !isRefreshing && hasSelectedRoutes
     Box(Modifier.fillMaxSize().padding(end = 24.dp, bottom = 24.dp)) {
         Column(
@@ -323,11 +325,14 @@ private fun FloatingUtilities(
             UtilityButton(
                 label = "현재 위치",
                 icon = Icons.Rounded.Navigation,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                containerColor = if (darkTheme) MaterialTheme.colorScheme.surfaceContainerHigh
+                else MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,
                 action = onLocate,
                 enabled = buttonsEnabled,
-                modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                modifier = if (darkTheme) {
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                } else Modifier,
             )
             Spacer(Modifier.height(16.dp))
             UtilityButton(
