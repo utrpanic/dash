@@ -14,13 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.utrpanic.dash.ui.home.DashHomeScreen
-import dev.utrpanic.dash.ui.home.DashDestination
+import dev.utrpanic.dash.ui.navigation.DashNavigation
 import dev.utrpanic.dash.ui.home.DashViewModel
-import dev.utrpanic.dash.ui.boardingpoint.BoardingPointEditScreen
-import dev.utrpanic.dash.ui.boardingpoint.BoardingPointListScreen
-import dev.utrpanic.dash.ui.busstop.AddBusStopScreen
-import dev.utrpanic.dash.ui.busroute.SelectBusRoutesScreen
 import dev.utrpanic.dash.ui.theme.DashTheme
 
 class MainActivity : ComponentActivity() {
@@ -54,53 +49,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                when (state.destination) {
-                    DashDestination.HOME -> DashHomeScreen(
-                        state = state,
-                        onSelectNext = viewModel::selectNextBoardingPoint,
-                        onRefresh = viewModel::refresh,
-                        onLocate = viewModel::resolveFromCurrentLocation,
-                        onEdit = { state.currentBoardingPoint?.let(viewModel::editBoardingPoint) },
-                        onManage = viewModel::openBoardingPoints,
-                    )
-                    DashDestination.BOARDING_POINTS -> BoardingPointListScreen(
-                        points = state.boardingPoints,
-                        currentId = state.currentBoardingPoint?.id,
-                        onBack = viewModel::showHome,
-                        onSelect = viewModel::selectBoardingPoint,
-                        onEdit = viewModel::editBoardingPoint,
-                        onDelete = viewModel::deleteBoardingPoint,
-                        onAdd = viewModel::addBoardingPoint,
-                    )
-                    DashDestination.EDIT_BOARDING_POINT -> BoardingPointEditScreen(
-                        draft = state.draft,
-                        canDelete = state.draft?.originalId != null && state.boardingPoints.size > 1,
-                        isSaving = state.isSaving,
-                        errorMessage = state.errorMessage,
-                        onBack = viewModel::openBoardingPoints,
-                        onNameChange = viewModel::updateDraftName,
-                        onRemoveStop = viewModel::removeDraftStop,
-                        onSave = viewModel::saveDraft,
-                        onDelete = viewModel::deleteDraft,
-                        onAddStop = viewModel::openAddBusStop,
-                        onSelectRoutes = viewModel::openRouteSelection,
-                    )
-                    DashDestination.ADD_BUS_STOP -> AddBusStopScreen(
-                        state = state,
-                        onBack = viewModel::returnToDraft,
-                        onQueryChange = viewModel::updateStopQuery,
-                        onSelect = viewModel::selectStop,
-                        onRetryRoutes = viewModel::retrySelectedStopRoutes,
-                        onAdd = viewModel::addSelectedStop,
-                    )
-                    DashDestination.SELECT_BUS_ROUTES -> SelectBusRoutesScreen(
-                        state = state,
-                        onBack = viewModel::returnToDraft,
-                        onToggle = viewModel::toggleRoute,
-                        onRetry = viewModel::retryRouteCandidates,
-                        onComplete = viewModel::completeRouteSelection,
-                    )
-                }
+                DashNavigation(state, viewModel)
             }
         }
     }

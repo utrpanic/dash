@@ -1,6 +1,5 @@
 package dev.utrpanic.dash.ui.boardingpoint
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,7 +60,6 @@ fun BoardingPointListScreen(
     onDelete: (BoardingPoint) -> Unit,
     onAdd: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
     var deleteConfirmation by remember { mutableStateOf<BoardingPoint?>(null) }
 
     Scaffold(

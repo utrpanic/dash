@@ -1,6 +1,5 @@
 package dev.utrpanic.dash.ui.busstop
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,7 +78,6 @@ fun AddBusStopScreen(
     onRetryRoutes: () -> Unit,
     onAdd: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
     val cameraState = rememberCameraPositionState()
     val focusStop = state.selectedStop ?: state.stopResults.firstOrNull()
     LaunchedEffect(focusStop?.id) {

@@ -34,7 +34,7 @@ data class DashUiState(
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val lastUpdatedAt: Instant? = null,
-    val destination: DashDestination = DashDestination.HOME,
+    val backStack: List<DashDestination> = listOf(DashDestination.HOME),
     val boardingPoints: List<BoardingPoint> = emptyList(),
     val draft: BoardingPointDraft? = null,
     val isSaving: Boolean = false,
@@ -50,7 +50,9 @@ data class DashUiState(
     val selectedRoutes: Set<dev.utrpanic.dash.domain.model.BusRoute> = emptySet(),
     val isLoadingRouteCandidates: Boolean = false,
     val routeSelectionError: String? = null,
-)
+) {
+    val destination: DashDestination get() = backStack.last()
+}
 
 class DashViewModel internal constructor(
     private val boardingPointRepository: dev.utrpanic.dash.domain.repository.BoardingPointRepository,
@@ -66,7 +68,6 @@ class DashViewModel internal constructor(
         container.busStopRepository,
         container.busRouteRepository,
     )
-
     private val resolveCurrent = ResolveCurrentBoardingPoint(
         boardingPointRepository,
         locationProvider,
@@ -154,13 +155,16 @@ class DashViewModel internal constructor(
     }
 
     fun openBoardingPoints() {
+        if (_state.value.isSaving) return
+        if (_state.value.destination != DashDestination.HOME) return
         viewModelScope.launch {
             runCatching { boardingPointRepository.loadConfiguration() }
                 .onSuccess { configuration ->
                     _state.update {
+                        if (it.destination != DashDestination.HOME) return@update it
                         it.copy(
                             boardingPoints = configuration.boardingPoints,
-                            destination = DashDestination.BOARDING_POINTS,
+                            backStack = it.backStack + DashDestination.BOARDING_POINTS,
                             errorMessage = null,
                         )
                     }
@@ -169,35 +173,48 @@ class DashViewModel internal constructor(
         }
     }
 
-    fun showHome() {
-        _state.update { it.copy(destination = DashDestination.HOME, draft = null) }
+    fun navigateBack() {
+        _state.update { state ->
+            if (state.backStack.size <= 1 || state.isSaving) return@update state
+            state.copy(
+                backStack = state.backStack.dropLast(1),
+                draft = if (state.destination == DashDestination.EDIT_BOARDING_POINT) null else state.draft,
+                routeSelectionStop = if (state.destination == DashDestination.SELECT_BUS_ROUTES) null else state.routeSelectionStop,
+                errorMessage = null,
+            )
+        }
     }
 
     fun selectBoardingPoint(point: BoardingPoint) {
+        if (_state.value.isSaving) return
         viewModelScope.launch {
             val configuration = boardingPointRepository.loadConfiguration()
             boardingPointRepository.saveConfiguration(configuration.copy(currentBoardingPointId = point.id))
             _state.update {
-                it.copy(destination = DashDestination.HOME, currentBoardingPoint = point, upcomingBuses = emptyList())
+                it.copy(backStack = listOf(DashDestination.HOME), currentBoardingPoint = point, upcomingBuses = emptyList())
             }
             refresh(replaceRequest = true)
         }
     }
 
     fun editBoardingPoint(point: BoardingPoint) {
+        if (_state.value.isSaving) return
+        if (_state.value.destination !in listOf(DashDestination.HOME, DashDestination.BOARDING_POINTS)) return
         _state.update {
             it.copy(
                 draft = BoardingPointDraft(point.id, point.name, point.routes),
-                destination = DashDestination.EDIT_BOARDING_POINT,
+                backStack = it.backStack + DashDestination.EDIT_BOARDING_POINT,
             )
         }
     }
 
     fun addBoardingPoint() {
+        if (_state.value.isSaving) return
+        if (_state.value.destination != DashDestination.BOARDING_POINTS) return
         _state.update {
             it.copy(
                 draft = BoardingPointDraft(null, "", emptyMap()),
-                destination = DashDestination.EDIT_BOARDING_POINT,
+                backStack = it.backStack + DashDestination.EDIT_BOARDING_POINT,
             )
         }
     }
@@ -213,9 +230,11 @@ class DashViewModel internal constructor(
     }
 
     fun openAddBusStop() {
+        if (_state.value.isSaving) return
+        if (_state.value.destination != DashDestination.EDIT_BOARDING_POINT) return
         _state.update {
             it.copy(
-                destination = DashDestination.ADD_BUS_STOP,
+                backStack = it.backStack + DashDestination.ADD_BUS_STOP,
                 stopQuery = "",
                 stopResults = emptyList(),
                 selectedStop = null,
@@ -237,10 +256,6 @@ class DashViewModel internal constructor(
                 }
             }
         }
-    }
-
-    fun returnToDraft() {
-        _state.update { it.copy(destination = DashDestination.EDIT_BOARDING_POINT) }
     }
 
     fun updateStopQuery(query: String) {
@@ -284,23 +299,28 @@ class DashViewModel internal constructor(
     }
 
     fun addSelectedStop() {
+        if (_state.value.destination != DashDestination.ADD_BUS_STOP) return
         val stop = _state.value.selectedStop ?: return
         _state.update { state ->
             val draft = state.draft ?: return@update state
             state.copy(
                 draft = draft.copy(routes = if (stop in draft.routes) draft.routes else draft.routes + (stop to emptySet())),
-                destination = DashDestination.EDIT_BOARDING_POINT,
+                backStack = state.backStack.dropLast(1),
             )
         }
     }
 
     fun openRouteSelection(stop: dev.utrpanic.dash.domain.model.BusStop) {
+        if (_state.value.isSaving) return
+        if (_state.value.destination !in listOf(DashDestination.EDIT_BOARDING_POINT, DashDestination.SELECT_BUS_ROUTES)) return
         val storedRoutes = _state.value.draft?.routes?.get(stop).orEmpty()
             .distinctBy { it.region to it.id }
             .toSet()
         _state.update {
             it.copy(
-                destination = DashDestination.SELECT_BUS_ROUTES,
+                backStack = if (it.destination == DashDestination.SELECT_BUS_ROUTES) {
+                    it.backStack
+                } else it.backStack + DashDestination.SELECT_BUS_ROUTES,
                 routeSelectionStop = stop,
                 routeCandidates = storedRoutes.sortedWith(dev.utrpanic.dash.domain.model.BusRouteNaturalComparator),
                 selectedRoutes = storedRoutes,
@@ -344,6 +364,7 @@ class DashViewModel internal constructor(
     }
 
     fun completeRouteSelection() {
+        if (_state.value.destination != DashDestination.SELECT_BUS_ROUTES) return
         val stop = _state.value.routeSelectionStop ?: return
         val routes = _state.value.selectedRoutes
         if (routes.isEmpty()) return
@@ -351,7 +372,7 @@ class DashViewModel internal constructor(
             val draft = state.draft ?: return@update state
             state.copy(
                 draft = draft.copy(routes = draft.routes + (stop to routes)),
-                destination = DashDestination.EDIT_BOARDING_POINT,
+                backStack = state.backStack.dropLast(1),
                 routeSelectionStop = null,
             )
         }
@@ -362,6 +383,7 @@ class DashViewModel internal constructor(
     }
 
     fun saveDraft() {
+        if (_state.value.destination != DashDestination.EDIT_BOARDING_POINT) return
         val draft = _state.value.draft ?: return
         val name = draft.name.trim()
         if (name.isEmpty() || _state.value.isSaving) return
@@ -384,7 +406,7 @@ class DashViewModel internal constructor(
                         isSaving = false,
                         boardingPoints = configuration.boardingPoints,
                         currentBoardingPoint = if (state.currentBoardingPoint?.id == point.id) point else state.currentBoardingPoint,
-                        destination = DashDestination.BOARDING_POINTS,
+                        backStack = state.backStack.dropLast(1),
                         draft = null,
                     )
                 }
@@ -396,6 +418,7 @@ class DashViewModel internal constructor(
     }
 
     fun deleteDraft() {
+        if (_state.value.destination != DashDestination.EDIT_BOARDING_POINT) return
         val id = _state.value.draft?.originalId ?: return
         deleteBoardingPointById(id)
     }
@@ -426,7 +449,9 @@ class DashViewModel internal constructor(
                         boardingPoints = configuration.boardingPoints,
                         currentBoardingPoint = currentPoint,
                         upcomingBuses = if (currentChanged) emptyList() else state.upcomingBuses,
-                        destination = DashDestination.BOARDING_POINTS,
+                        backStack = if (state.destination == DashDestination.EDIT_BOARDING_POINT) {
+                            state.backStack.dropLast(1)
+                        } else state.backStack,
                         draft = null,
                     )
                 }

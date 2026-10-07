@@ -1,6 +1,5 @@
 package dev.utrpanic.dash.ui.busroute
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,7 +54,6 @@ fun SelectBusRoutesScreen(
     onRetry: () -> Unit,
     onComplete: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
