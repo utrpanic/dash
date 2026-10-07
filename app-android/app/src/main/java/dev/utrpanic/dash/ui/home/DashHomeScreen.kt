@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.Navigation
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Card
@@ -324,7 +325,7 @@ private fun FloatingUtilities(
         ) {
             UtilityButton(
                 label = "현재 위치",
-                icon = Icons.Rounded.Navigation,
+                icon = Icons.Rounded.MyLocation,
                 containerColor = if (darkTheme) MaterialTheme.colorScheme.surfaceContainerHigh
                 else MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,
