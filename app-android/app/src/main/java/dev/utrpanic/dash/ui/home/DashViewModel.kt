@@ -11,12 +11,10 @@ import dev.utrpanic.dash.domain.usecase.ResolveCurrentBoardingPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
@@ -36,7 +34,6 @@ data class DashUiState(
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val lastUpdatedAt: Instant? = null,
-    val now: Instant = Instant.now(),
     val destination: DashDestination = DashDestination.HOME,
     val boardingPoints: List<BoardingPoint> = emptyList(),
     val draft: BoardingPointDraft? = null,
@@ -81,15 +78,6 @@ class DashViewModel internal constructor(
     private var refreshRequestId = 0L
     private var stopSearchJob: Job? = null
 
-    init {
-        viewModelScope.launch {
-            while (isActive) {
-                delay(10_000)
-                _state.update { it.copy(now = Instant.now()) }
-            }
-        }
-    }
-
     fun resolveFromCurrentLocation() {
         viewModelScope.launch {
             _state.update { it.copy(isLoadingConfiguration = true, errorMessage = null) }
@@ -124,7 +112,7 @@ class DashViewModel internal constructor(
                 it.copy(upcomingBuses = emptyList(), lastUpdatedAt = null, isRefreshing = false, errorMessage = null)
             }
         }
-        if (point == null) return
+        if (point == null || !point.hasSelectedRoutes) return
         refreshJob = viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true, errorMessage = null) }
             runCatching { fetchUpcoming(point) }
@@ -136,7 +124,6 @@ class DashViewModel internal constructor(
                             upcomingBuses = buses,
                             isRefreshing = false,
                             lastUpdatedAt = Instant.now(),
-                            now = Instant.now(),
                         )
                     }
                 }

@@ -1,7 +1,9 @@
 package dev.utrpanic.dash.ui.home
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,11 +33,9 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -42,11 +43,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,7 +62,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import dev.utrpanic.dash.domain.model.UpcomingBus
+import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -92,7 +101,8 @@ fun DashHomeScreen(
                 if (state.currentBoardingPoint != null) {
                     FloatingUtilities(
                         lastUpdatedAt = state.lastUpdatedAt,
-                        now = state.now,
+                        isRefreshing = state.isRefreshing,
+                        hasSelectedRoutes = state.currentBoardingPoint.hasSelectedRoutes,
                         onLocate = onLocate,
                         onRefresh = onRefresh,
                     )
@@ -193,7 +203,7 @@ private fun HomeContent(
     when {
         state.isLoadingConfiguration -> LoadingState()
         state.currentBoardingPoint == null -> EmptyHome(onLocate)
-        state.isRefreshing && state.upcomingBuses.isEmpty() -> LoadingState()
+        state.isRefreshing -> LoadingState()
         state.errorMessage != null -> MessageState(state.errorMessage, "다시 시도", onRefresh)
         !state.currentBoardingPoint.hasSelectedRoutes -> {
             MessageState("선택한 버스 노선이 없습니다.\n탑승 지점을 편집해 노선을 선택하세요.")
@@ -299,41 +309,67 @@ private fun ArrivalCard(bus: UpcomingBus) {
 @Composable
 private fun FloatingUtilities(
     lastUpdatedAt: Instant?,
-    now: Instant,
+    isRefreshing: Boolean,
+    hasSelectedRoutes: Boolean,
     onLocate: () -> Unit,
     onRefresh: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(end = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.Bottom,
-        horizontalAlignment = Alignment.End,
-    ) {
-        UtilityButton(
-            label = "현재 위치",
-            icon = Icons.Rounded.Navigation,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            contentColor = MaterialTheme.colorScheme.primary,
-            action = onLocate,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-        )
-        Spacer(Modifier.height(16.dp))
-        UtilityButton(
-            label = "새로고침",
-            icon = Icons.Rounded.Refresh,
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
-            action = onRefresh,
-        )
-        lastUpdatedAt?.let {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                elapsedText(it, now),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
+    val buttonsEnabled = !isRefreshing && hasSelectedRoutes
+    Box(Modifier.fillMaxSize().padding(end = 24.dp, bottom = 24.dp)) {
+        Column(
+            modifier = Modifier.align(Alignment.BottomEnd).width(64.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            UtilityButton(
+                label = "현재 위치",
+                icon = Icons.Rounded.Navigation,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.primary,
+                action = onLocate,
+                enabled = buttonsEnabled,
+                modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
             )
+            Spacer(Modifier.height(16.dp))
+            UtilityButton(
+                label = "새로고침",
+                icon = Icons.Rounded.Refresh,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                action = onRefresh,
+                enabled = buttonsEnabled,
+            )
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().height(16.dp), contentAlignment = Alignment.Center) {
+                ElapsedTimeLabel(lastUpdatedAt, isRefreshing)
+            }
         }
     }
+}
+
+@Composable
+private fun ElapsedTimeLabel(lastUpdatedAt: Instant?, isRefreshing: Boolean) {
+    if (lastUpdatedAt == null || isRefreshing) return
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val now = produceState(initialValue = Instant.now(), lastUpdatedAt, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = Instant.now()
+                delay(1_000)
+            }
+        }
+    }.value
+    if (Duration.between(lastUpdatedAt, now).seconds < 10) return
+    val label = elapsedText(lastUpdatedAt, now)
+    Text(
+        label,
+        modifier = Modifier.fillMaxWidth().semantics {
+            contentDescription = "마지막 업데이트, $label"
+        },
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        textAlign = TextAlign.Center,
+    )
 }
 
 @Composable
@@ -343,18 +379,20 @@ private fun UtilityButton(
     containerColor: Color,
     contentColor: Color,
     action: () -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    FilledIconButton(
-        onClick = action,
-        modifier = Modifier.size(64.dp).shadow(8.dp, CircleShape).then(modifier),
-        shape = CircleShape,
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-        ),
+    Box(
+        modifier = Modifier.size(64.dp)
+            .shadow(8.dp, CircleShape)
+            .background(containerColor, CircleShape)
+            .clip(CircleShape)
+            .then(modifier)
+            .clickable(enabled = enabled, role = Role.Button, onClick = action)
+            .alpha(if (enabled) 1f else 0.45f),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
+        Icon(icon, contentDescription = label, tint = contentColor, modifier = Modifier.size(28.dp))
     }
 }
 
