@@ -91,7 +91,7 @@ struct CurrentBoardingPointView: View {
         } else {
           ScrollView {
             BoardingPointView(
-              upcomingBuses: Array(store.upcomingBuses.sortedByArrival.prefix(5))
+              upcomingBuses: Array(store.upcomingBuses.sortedByArrival.prefix(10))
             )
             .padding(.top, r.dimen.spacingSmall)
             .padding(.bottom, r.dimen.utilityButtonSize * 2)

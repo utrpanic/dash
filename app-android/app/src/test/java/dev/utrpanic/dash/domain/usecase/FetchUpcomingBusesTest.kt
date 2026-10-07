@@ -14,20 +14,20 @@ import org.junit.Test
 
 class FetchUpcomingBusesTest {
     @Test
-    fun keepsSuccessfulStopsSortsArrivalsAndLimitsToFive() = runBlocking {
+    fun keepsSuccessfulStopsSortsArrivalsAndLimitsToTen() = runBlocking {
         val successfulStop = stop(1)
         val failedStop = stop(2)
         val route = BusRoute(1, "1", ServiceRegion.GYEONGGI)
         val point = BoardingPoint("point", "지점", mapOf(successfulStop to setOf(route), failedStop to setOf(route)))
         val repository = BusArrivalRepository { stop, _ ->
             if (stop == failedStop) throw IllegalStateException()
-            (1..7).map { arrival(route, stop.id.stopId, seconds = it * 60) }.reversed()
+            (1..12).map { arrival(route, stop.id.stopId, seconds = it * 60) }.reversed()
         }
 
         val buses = FetchUpcomingBuses(repository)(point)
 
-        assertEquals(5, buses.size)
-        assertEquals(listOf(60L, 120L, 180L, 240L, 300L), buses.map { it.timeUntilArrival.inWholeSeconds })
+        assertEquals(10, buses.size)
+        assertEquals((1L..10L).map { it * 60 }, buses.map { it.timeUntilArrival.inWholeSeconds })
     }
 
     private fun stop(id: Long) = BusStop(BusStopId.Gyeonggi(id), "정류장 $id", latitude = 37.0, longitude = 127.0)

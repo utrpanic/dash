@@ -31,7 +31,7 @@ class FetchUpcomingBuses(private val repository: BusArrivalRepository) {
         if (results.none(Result<List<UpcomingBus>>::isSuccess)) {
             throw UpcomingBusesUnavailableException()
         }
-        results.flatMap { it.getOrDefault(emptyList()) }.sortedByArrival().take(5)
+        results.flatMap { it.getOrDefault(emptyList()) }.sortedByArrival().take(10)
     }
 }
 
